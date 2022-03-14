@@ -19,9 +19,6 @@ global {
 	string DO_NOTHING<- "do nothing";
 	
 	/****** PARAMETERS **********/
-	bool reinforcement_learning <- false;
-	int nb_iterations_rl <- 10000;
-	int nb_replications <- 1;
 	float step <- 1 #day;
 	float end_simulation_after <- 5 #year;
 	int number_farmers <- 100;
@@ -32,19 +29,13 @@ global {
 	float proba_interaction_day <- 0.1;
 	
 	
-	float learning_rate <- 0.1;
-	float discount_factor <- 0.5;
-	
 	list<string> topics <- [FINANCIAL, ENVIRONMENTAL, FARM_MANAGEMENT] ;
 	list<string> possible_actions <- [FINANCIAL_SUPPORT, ENV_SENSIBILISATION, TRAINING,DO_NOTHING,TRAINING+"|" +FINANCIAL_SUPPORT, TRAINING+"|" +ENV_SENSIBILISATION, FINANCIAL_SUPPORT+"|" +ENV_SENSIBILISATION, FINANCIAL_SUPPORT+"|" + ENV_SENSIBILISATION+"|" + TRAINING] ;
 	bool save_result_in_file <- false;
-	bool display_action_chosen <- false;
 	/****** GLOBAL VARIBALES **********/
 	
 	institution the_institution;
 	float time_sim update: time_sim + step;
-	bool end_of_run <- false update: false;
-	
 	/********* OUTPUT ***********/
 	float adoption_rate <- 0.0 ;
 	float min_intention <- 0.0 ;
@@ -62,89 +53,18 @@ global {
 	list<float> mean_intentions_sim;
 	list<float> time_s;
 	
-	
+	bool mode_batch <- false;
 	init {
 		create institution {
 			the_institution <- self;
-			if not reinforcement_learning {
-				do initialize(0);
-			}
+			do initialize;
+			
 		}
-		if not reinforcement_learning {do create_farmers(0);}
-		else {
-			do learning;
-		}
+		do create_farmers;
 	}
 	
 	/*  ******* ACTIONS **********/
-	action simulate(int i, list<farmer> farmers) {
-	
-		float time_sim_i <- 0.0;
-		int week <- 0;
-		int month <- 0;
-		loop while:time_sim_i < end_simulation_after {
-			time_sim_i <- time_sim_i + step;
-			float week_ <- time_sim_i / #week;
-			float month_ <- time_sim_i / #month;
-			time_s[i] <- time_sim_i;
-			do farmer_behavior_day(farmers);
-			if (int(week_) > week) {
-				week <- int(week_);
-				do farmer_behavior_week(farmers);
-			}
-			if (int(month_) > month) {
-				month <- int(month_);
-				if (month mod 6) = 0 {
-					num_adopters[i] <- farmers count each.adoption;
-					mean_intentions_sim[i] <- farmers mean_of (each.intention);
-					do institution_behavior_6month(i);
-					ask farmers {
-						do compute_intention;
-					}
-				}
-				if (month mod 12) = 0 {
-					do institution_behavior_year(i);
-				}
-				do farmer_behavior_week;
-			}
-		}
-		ask the_institution {
-			last_turn[i] <- true;
-			map<string,int> new_state <- define_state(i);
-			map<string,float> actions <- q[new_state];
-			if (actions = nil) or empty(actions) {
-				actions <- [];
-				loop p over: possible_actions {
-					actions[p] <- 1.0;
-				}
-			}
-			q[new_state] <- actions;
-			do update_q(i,new_state);
-			
-		}
-		do update_outputs(farmers);
-		
-	}
-	action farmer_behavior_day(list<farmer> farmers) {
-		ask farmers {
-			do exchange_with_other;
-		}
-	}
-	action farmer_behavior_week(list<farmer> farmers) {
-		ask farmers {
-			do decision;
-		}
-	}
-	action institution_behavior_6month (int i) {
-		ask the_institution {
-			do select_policy(i);
-		}
-	}
-	action institution_behavior_year(int i) {
-		ask the_institution {
-			do add_money(i);
-		}
-	}
+
 	
 	action update_outputs(list<farmer> farmers) {
 		adoption_rate <- (farmers count each.adoption) /length(farmers);
@@ -152,13 +72,10 @@ global {
 		min_intention <- farmers min_of (each.intention) ;
 		max_intention <- farmers max_of (each.intention);
 		median_intention <- median(farmers collect (each.intention)) ;
-		if (reinforcement_learning) {
-			adoption_rates << adoption_rate;
-			mean_intentions <<mean_intention;
-		}
+		
 	}
 	
-	action create_farmers(int i) {
+	action create_farmers {
 		create farmer number: number_farmers {
 			loop topic over: topics{
 				opinion_on_topics_init[topic] <- rnd(1.0);
@@ -177,81 +94,23 @@ global {
 			w_attitude <- w_attitude / sum_w;
 			w_social <- w_social / sum_w;
 			w_pbc <- w_pbc / sum_w;
-			id <-i;
 			do initialize;
 		}
 	}
 	
-	action reset_sim {
-		time_sim <- 0.0;
-		ask farmer {
-			do initialize;
-		}
-		ask the_institution {
-			budget <- [];
-			support <- [];
-			last_turn <- [];
-			action_chosen <- [];
-		}
-		adoption_rates <- [];
-		mean_intentions <- [];
-		
-		mean_intentions_sim <- [];
-		num_adopters <- [];
-	}
-	
-	reflex compute_stats when: not reinforcement_learning {
+	reflex compute_stats  {
 		do update_outputs(farmer as list);
 	}
 	
-	action learning {
-		int cpt <- 1;
-		bool first_round <- true;
-		loop times: nb_iterations_rl {
-			float t <- machine_time;
-			policy_id << cpt;
-			do reset_sim;
-			
-			loop i from: 0 to: nb_replications -1{
-				time_s << 0.0;
-				if (first_round) {
-					do create_farmers(i);
-				}
-				num_adopters << 0;
-				ask the_institution {
-					do initialize(i);
-				}
-			}
-			first_round <- false;
-			loop i from: 0 to: nb_replications -1{
-				ask self parallel: true { 
-					list<farmer> farmers <- farmer where (each.id = i);
-					ask farmers {
-						do compute_intention;
-					}
-					mean_intentions_sim << farmers mean_of each.intention ;
-				
-					ask the_institution{previous_mean_intention[i] <- farmers mean_of (each.intention);}
-					do simulate(i, farmers);
-				}
-			}
-			adoption_rate_policy << mean(adoption_rates);
-			mean_intention_policy << mean(mean_intentions) ;
-			string result <-  "" + cpt +" mean intention: " +  last(mean_intention_policy) with_precision 2 + " adoption percentage: " + (100.0 * (last(adoption_rate_policy))) with_precision 1 + "% computation time: " +((machine_time - t)/1000.0 with_precision 1) ;
-			write result + (display_action_chosen ? (" _ " + the_institution.action_chosen[0]) : "");
-			if save_result_in_file {
-				save result to: "result.txt" rewrite: false;
-			}
-			cpt <- cpt + 1;	
-		}
-	}
-	reflex end_simulation when: not reinforcement_learning and time_sim >= end_simulation_after {
+	
+
+	reflex end_simulation when: not mode_batch and (time >= end_simulation_after) {
 		do pause;	
 	}
 }
 
 
-species farmer schedules: container(reinforcement_learning ? [] : shuffle(farmer)) {
+species farmer schedules: shuffle(farmer) {
 	float w_attitude ;
 	float w_social ;
 	float w_pbc ;
@@ -267,7 +126,6 @@ species farmer schedules: container(reinforcement_learning ? [] : shuffle(farmer
 	float intention ;
 	list<farmer> social_network;
 	bool adoption <- false;
-	int id;
 	float technical_skill_init;
 	
 	float technical_skill <- 0.0;
@@ -300,7 +158,7 @@ species farmer schedules: container(reinforcement_learning ? [] : shuffle(farmer
 	
 	action compute_attitude {
 		attitude <- 0.0;
-		map<string, float> supp <- the_institution.support[id];
+		map<string, float> supp <- the_institution.support;
 		loop topic over: topics {
 			attitude <- attitude + (opinion_on_topics[topic] + (supp = nil ? 0.0 : supp[topic])) *  weights_for_topics[topic];
 		}
@@ -323,7 +181,7 @@ species farmer schedules: container(reinforcement_learning ? [] : shuffle(farmer
 		if not adoption and (intention > adoption_threshold) {
 			adoption <- true;
 			ask the_institution {
-				do give_financial_support(myself.id);
+				do give_financial_support;
 			}
 		}
 	}
@@ -337,151 +195,77 @@ species farmer schedules: container(reinforcement_learning ? [] : shuffle(farmer
 	}
 }
 
-species institution schedules: container(reinforcement_learning ? [] : shuffle(institution)){
-	map<int,float> budget;
-	map<int,map<string,float>> support;
-	map<int,int> previous_mean_intention;
-	map<map<string,int>, map<string,float>> q;
-	map<string,int> current_state;
-	string last_action <- "";
-	list<bool> last_turn;
-	list<string> action_chosen <- [];
+species institution {
+	float budget;
+	map<string,float> support;
+	int previous_adopters_nb;
+	float previous_mean_intention;
 	
-	action initialize(int id) {
-		support[id] <- [];
-		budget[id] <- 0.0;
-		previous_mean_intention[id] <- 0.0;
-		last_turn<< false;
+	action initialize {
+		support <- [];
+		budget <- 0.0;
+		previous_adopters_nb <- 0;
+		previous_mean_intention <- 0.0;
 		
 	}
-	action select_policy(int id) {
+	action select_policy {
 		loop topic over: topics {
-			support[id][topic] <- 0.0;
+			support[topic] <- 0.0;
 		}
 		do select_actions ;
-			
 	}
 	
-	action update_q(int id, map<string,int> new_state) {
-		float reward <- last_turn[id] ? num_adopters[id]/number_farmers : 0.0;
-		float b <- q[current_state][last_action] ;
-		q[current_state][last_action] <- (1 - learning_rate) * q[current_state][last_action] + learning_rate * (reward + discount_factor * max(q[new_state].values));
-	}
-	
-	map<string,int> define_state(int id) {
-		map<string,int> state_ <- [];
-		state_["budget"] <- int(budget[id]/5);
-		state_["num_adopters"] <- int(num_adopters[id]/ 10);
-		state_["time"] <- time_s[id];
-		return state_;
-	}
-	action select_actions(int id) {
-		if (reinforcement_learning) {
-			map<string,int> new_state <- define_state(id);
-			map<string,float> actions <- q[new_state];
-			if (actions = nil) or empty(actions) {
-				actions <- [];
-				loop p over: possible_actions {
-					
-					actions[p] <- 1.0;
-				}
-			}
-			q[new_state] <- actions;
-			
-			if last_action != ""{
-				do update_q(id,new_state);
-			}
-			
-			//last_action <- shuffle(actions.keys) with_max_of (actions[each]);
-		
-			last_action <- (actions.keys)[rnd_choice(actions.values)];
-			
-			current_state <- new_state;
-			if last_action != ""  {
-				if display_action_chosen {
-					if length(action_chosen) < (id + 1) {
-						action_chosen <<"";
-					}
-					action_chosen[id] <- action_chosen[id] + " %% " + last_action;
-				}
-				list<string> acts_prim <- last_action split_with "|";
-				loop act over: acts_prim {
-					switch act {
-						match FINANCIAL_SUPPORT {
-							do financial_support(id,0.2);
-						}
-						match TRAINING {
-							do training(id,0.2, 20);
-						}
-						match ENV_SENSIBILISATION {
-							do environmental_sensibilisation(id,0.2, 100);
-						}
-					}
-				}
-			}
-		} else {
-			do financial_support(id,0.2);
-			do training(id,0.2, 10);
-			do environmental_sensibilisation(id,0.2, 100);
-			ask farmer {
-				do compute_intention;
-			}
-		}
+	action select_actions {
+		do financial_support(0.2);
+		do training(0.2, 10);
+		do environmental_sensibilisation(0.2, 100);
 		
 	}
-	action add_money(int id) {
-		budget[id] <- budget[int(world)] + new_budget_year;
+	action add_money {
+		budget <- budget + new_budget_year;
 	}
 	
-	action financial_support (int id, float level) {
-		support[id][FINANCIAL] <- level;
+	action financial_support ( float level) {
+		support[FINANCIAL] <- level;
 	}
 	
-	action training (int id, float level, int number) {
-		if (budget[id] > (number * level)) {
+	action training (float level, int number) {
+		if (budget > (number * level)) {
 			ask number among farmer  {
 				technical_skill <- technical_skill + level;
 				opinion_on_topics[FARM_MANAGEMENT] <- opinion_on_topics[FARM_MANAGEMENT] + level; 
 			}
-			budget[id] <- budget[id] - (number * level);
+			budget <- budget - (number * level);
 		}
-		
 	}
 	
-	action environmental_sensibilisation (int id,float level, int number) {
-		if (budget[id] > (number * level / 10.0)) {
+	action environmental_sensibilisation (float level, int number) {
+		if (budget > (number * level / 2.0)) {
 			ask number among farmer  {
 				opinion_on_topics[ENVIRONMENTAL] <- opinion_on_topics[ENVIRONMENTAL] + level; 
 			}
-			budget[id] <- budget[id] - (number * level) / 10.0;
+			budget <- budget - (number * level) / 2.0;
 		}
 	}
 	
-	action give_financial_support(int id) {
-		budget[id] <- budget[id] - support[id][FINANCIAL];
+	action give_financial_support {
+		budget <- budget - support[FINANCIAL];
 	}
 	
 	reflex receive_budget when: every(#year) {
-		do add_money(0);
+		do add_money;
 	}
 	reflex choose_policy when: every(6 #month){
-		
-		do select_policy(0);
+		do select_policy;
 	}
 } 
 
-experiment learn_policy type: gui autorun: true{
-	action _init_ {
-		create simulation with: (reinforcement_learning:true);
+
+experiment one_simulation_batch until: time >= end_simulation_after type: batch {
+	init {
+		mode_batch <- false;
 	}
 }
-
-experiment learn_policy_batch type: batch until: cycle > 0{
-	action _init_ {
-		create simulation with: (reinforcement_learning:true, nb_replications:20, save_result_in_file:true);
-	}
-}
-
 
 experiment one_simulation type: gui {
 	output {
