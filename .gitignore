@@ -1,2 +1,6 @@
 
 *.metadata
+*.idea
+*__pycache__
+pythonJava/gama_results.png
+*nngamma
