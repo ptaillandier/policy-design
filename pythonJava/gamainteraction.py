@@ -6,7 +6,7 @@ import numpy.typing as npt
 import numpy as np
 
 
-def simulation_loop(sock_server: socket, gama_interaction_loop: Callable[[socket], None]) -> None:
+def simulation_loop(sock_server, gama_interaction_loop) -> None:
     #The server is waiting for clients to connect
     while True:
 
@@ -17,7 +17,7 @@ def simulation_loop(sock_server: socket, gama_interaction_loop: Callable[[socket
         gama_interaction_loop(conn)
 
 
-def listener_init(gama_interaction_loop_function: Callable[[socket, Callable[[socket], None]], None]) -> int:
+def listener_init(gama_interaction_loop_function) -> int:
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print("Listening Socket successfully created")

@@ -20,8 +20,7 @@ class Policy:
 
     # Choose an action given some observations
     # single is used to specify if it's online training
-    def choose_action(self, raw_observation: npt.NDArray[np.float64], nb_actions: int, single=True)\
-            -> (np.float64 | npt.NDArray[np.float64], npt.NDArray[np.float64]):
+    def choose_action(self, raw_observation: npt.NDArray[np.float64], nb_actions: int, single=True):
 
         tf.random.set_seed(1)
         seed(1)

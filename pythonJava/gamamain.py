@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import gama
 from numpy.random import seed
 import numpy.typing as npt
-
+from typing import List
 seed(1)
 
 
@@ -22,14 +22,14 @@ n_observations  = 3     # Number of observations from the state of the social pl
 n_sim_iterations= 10    # Number of iteration of simulation
 
 
-headless_dir                = r"C:\GAMA_1.8.2_Windows_with_JDK_03.21.22_b6da0133\headless"                      # Root directory for gama headless
-run_headless_script_path    = r"C:\GAMA_1.8.2_Windows_with_JDK_03.21.22_b6da0133\headless\gama-headless.bat"    # Path to the script that runs gama headless
-gaml_file_path              = r"C:\Users\Baptiste\Documents\policy-design\Diffusion Innovation - Reinforcement learning\models\TCP model.gaml" # Path to the gaml file containing the experiment/simulation to run
+headless_dir                = r"/home/ad_miat/GAMA_1.8.2_Linux_with_JDK_03.23.22_00531c7f/headless"                      # Root directory for gama headless
+run_headless_script_path    = r"/home/ad_miat/GAMA_1.8.2_Linux_with_JDK_03.23.22_00531c7f/headless/gama-headless.sh"    # Path to the script that runs gama headless
+gaml_file_path              = r"/home/ad_miat/gama_github/Diffusion Innovation - Reinforcement learning/models/TCP model.gaml" # Path to the gaml file containing the experiment/simulation to run
 experiment_name             = "one_simulation" # Name of the experiment to run
 
 
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
-sumrewards: list[float]     = []
+sumrewards: List[float]     = []
 
 
 #Converts an action to a string to be sent to the simulation
@@ -39,7 +39,7 @@ def action_to_string(actions: npt.NDArray[np.float64]) -> str:
 
 # Takes the observations from the simulation, sent as a string
 # Computes the appropriate policy and returns it
-def process_observations(policy_manager: Policy, observations: npt.NDArray[np.float64]) -> np.float64 | npt.NDArray[np.float64]:
+def process_observations(policy_manager: Policy, observations: npt.NDArray[np.float64]):
     action, processed_observations = policy_manager.choose_action(observations, n_actions)
     return action
 
@@ -57,9 +57,9 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
     policy_manager: Policy = Policy(model)
     try:
 
-        observations:   list[npt.NDArray[np.float64]]   = []
-        actions:        list[np.float64]                = []
-        rewards:        list[np.float64]                = []
+        observations:   List[npt.NDArray[np.float64]]   = []
+        actions:        List[np.float64]                = []
+        rewards:        List[np.float64]                = []
 
         while True:
 
@@ -101,7 +101,7 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
     sumrewards += [sum(rewards)]
 
 
-def train_model(_model: Sequential, _observations: list[npt.NDArray[np.float64]], _actions: list[int], _rewards: list[float]):
+def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float]):
     # Create a training based on model with the desired parameters.
     tr = training.Training(_model)
     print("observations:", _observations)
