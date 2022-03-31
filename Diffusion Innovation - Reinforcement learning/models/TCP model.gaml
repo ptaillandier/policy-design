@@ -105,11 +105,17 @@ global {
 	
 	
 
-	reflex end_simulation when: not mode_batch and (time >= end_simulation_after) {
+	reflex end_simulation when:(time >= end_simulation_after) {
+		write "ending simulation";
 		ask institution {
+			write "simulation sending last reward";
 			do send_reward;
-			do send_observations end:true;
+			write "simulation sending end signal";
+			do send_end;
+			write "simulation waiting for server's end signal";
+			do read_line from:server;//when the server is over he sends a message to the simulation, needed to prevent connexion reset exceptions
 		}
+		write "simulation pausing";
 		do pause;	
 	}
 }
@@ -232,24 +238,24 @@ species institution skills:[tcp] {
 			support[topic] <- 0.0;
 		}
 		
-		do send_observations end:false;
+		do send_observations;
 		
 		do select_actions ;
 	}
-//
-//	action send_end {
-//		let sent 	<- send(server, "END");
-//		if (! sent) {
-//			write "impossible d'envoyer le message de fin de simulation à : " + server;
-//		}
-//	}	
+
+	action send_end {
+		let sent 	<- send(server, "END");
+		if (! sent) {
+			write "impossible d'envoyer le message de fin de simulation à : " + server;
+		}
+	}	
 
 	action send_reward {
 		if(at_least_one_policy) {
 			//The reward = percentage of progression of mean_intention
 			let reward 	<- (mean_intention - previous_mean_intention) / (1 - previous_mean_intention);
 			let sent 	<- send(server, string(reward));
-			if ( ! sent) {
+			if (! sent) {
 				write "impossible d'envoyer le reward " + reward + " à : " + server;
 			}
 		}
@@ -259,12 +265,9 @@ species institution skills:[tcp] {
 		previous_mean_intention <- mean_intention;
 	}
 
-	action send_observations(bool end) {
+	action send_observations {
 		//budget restant, nb d'adoptant/taux, temps restant
 		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")";
-		if end {
-			observations <- observations + "END";
-		}
 		let sent <- send(server, observations);
 		if(!sent) {
 			write "Impossible d'envoyer les observations "+ observations + " au serveur " + server;

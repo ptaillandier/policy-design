@@ -1,6 +1,5 @@
 import socket
 import sys
-
 from keras import Sequential
 
 import gamainteraction
@@ -21,28 +20,9 @@ seed(1)
 n_episodes      = 1     # Number of episodes for the training
 n_actions       = 5     # Number of actions discrete actions of the social planner, can be modified for testing
 n_observations  = 3     # Number of observations from the state of the social planner, can be modified for testing
-n_sim_iterations= 10    # Number of iteration of simulation
-
 
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
 sumrewards: List[float]     = []
-
-
-#Converts an action to a string to be sent to the simulation
-def action_to_string(actions: npt.NDArray[np.float64]) -> str:
-    return ",".join([str(action) for action in actions]) + "\n"
-
-
-# Takes the observations from the simulation, sent as a string
-# Computes the appropriate policy and returns it
-def process_observations(policy_manager: Policy, observations: npt.NDArray[np.float64]):
-    action, processed_observations = policy_manager.choose_action(observations, n_actions)
-    return action
-
-
-# Takes the reward returned after applying the policy given the observations and update the model accordingly
-def process_reward(policy_reward: str, policy_applied: str, received_observations: str) -> None:
-    pass
 
 
 # The loop of interaction between the gama simulation and the model
@@ -63,19 +43,19 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
             print("waiting for observations")
             received_observations: str = gama_simulation.recv(1024).decode()
 
+            if received_observations == "END":
+                print("simulation has ended")
+                break
+
             print("the model received:", received_observations, "and will start processing it")
             obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
             observations += [obs]
 
-            if received_observations.endswith("END"):
-                print("simulation has ended")
-                break
-
             # we then compute a policy and send it back to gama
-            policy = process_observations(policy_manager, obs)
+            policy = gamainteraction.process_observations(policy_manager, obs, n_actions)
             actions += [policy]
 
-            str_action = action_to_string(np.array(policy))
+            str_action = gamainteraction.action_to_string(np.array(policy))
             print("the model is sending policy", str_action)
             gama_simulation.send(str_action.encode())
 
@@ -84,15 +64,16 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
             policy_reward = gama_simulation.recv(1024).decode()
             print("the model received the reward", policy_reward)
             rewards += [float(policy_reward)]
-            process_reward(policy_reward, policy, received_observations)
+            gamainteraction.process_reward(policy_reward, policy, received_observations)
 
             # new line for better understanding of the logs
             print()
     except ConnectionResetError:
         print("connection reset, end of simulation")
-    # except:
-    #     print(sys.exc_info()[0]):
+    except:
+        print(sys.exc_info()[0])
 
+    gama_simulation.send("over".encode()) #we send a message for the simulation to wait before closing
     train_model(model, observations, actions, rewards)
     sumrewards += [sum(rewards)]
 
@@ -128,8 +109,8 @@ if __name__ == "__main__":
         xml_path = gamainteraction.generate_gama_xml(   headless_dir,
                                                         listener_port,
                                                         gaml_file_path,
-                                                        experiment_name,
-                                                        n_sim_iterations)
+                                                        experiment_name
+                                                        )
         # run gama
         gamainteraction.run_gama_headless(xml_path,
                                           headless_dir,
