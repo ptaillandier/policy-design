@@ -12,6 +12,8 @@ import gama
 from numpy.random import seed
 import numpy.typing as npt
 from typing import List
+from user_local_variables import *
+
 seed(1)
 
 
@@ -20,12 +22,6 @@ n_episodes      = 1     # Number of episodes for the training
 n_actions       = 5     # Number of actions discrete actions of the social planner, can be modified for testing
 n_observations  = 3     # Number of observations from the state of the social planner, can be modified for testing
 n_sim_iterations= 10    # Number of iteration of simulation
-
-
-headless_dir                = r"/home/ad_miat/GAMA_1.8.2_Linux_with_JDK_03.23.22_00531c7f/headless"                      # Root directory for gama headless
-run_headless_script_path    = r"/home/ad_miat/GAMA_1.8.2_Linux_with_JDK_03.23.22_00531c7f/headless/gama-headless.sh"    # Path to the script that runs gama headless
-gaml_file_path              = r"/home/ad_miat/gama_github/Diffusion Innovation - Reinforcement learning/models/TCP model.gaml" # Path to the gaml file containing the experiment/simulation to run
-experiment_name             = "one_simulation" # Name of the experiment to run
 
 
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
