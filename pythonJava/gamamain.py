@@ -73,7 +73,7 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
     except:
         print(sys.exc_info()[0])
 
-    gama_simulation.send("over".encode()) #we send a message for the simulation to wait before closing
+    gama_simulation.send("over\n".encode()) #we send a message for the simulation to wait before closing
     train_model(model, observations, actions, rewards)
     sumrewards += [sum(rewards)]
 

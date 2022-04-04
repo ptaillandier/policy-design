@@ -116,7 +116,7 @@ global {
 			do read_line from:server;//when the server is over he sends a message to the simulation, needed to prevent connexion reset exceptions
 		}
 		write "simulation pausing";
-		do pause;	
+		do die;	
 	}
 }
 
