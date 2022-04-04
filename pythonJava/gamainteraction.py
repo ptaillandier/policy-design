@@ -61,7 +61,7 @@ def generate_gama_xml(headless_dir: str, listener_port: int, gaml_experiment_pat
 
 # Runs gama simulations in headless mode following the description of the xml file
 def run_gama_headless(sim_file_path: str, headless_dir: str, run_headless_script_path: str) -> int:
-    return os.system(f"cd {headless_dir} && {run_headless_script_path} {sim_file_path} out")
+    return os.system(f"cd '{headless_dir}' && '{run_headless_script_path}' '{sim_file_path}' out")
 
 
 def string_to_nparray(array_as_string: str) -> npt.NDArray[np.float64]:
