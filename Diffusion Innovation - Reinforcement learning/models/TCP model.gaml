@@ -284,15 +284,15 @@ species institution skills:[tcp] {
 			let actions 	<- replace(replace(actions_msg, "[", ""), "]","") split_with ",";
 			let fin_support	<- float(actions[0]);
 			let training_l	<- float(actions[1]);
-			let training_n 	<- int(actions[2]);
+			let training_p 	<- float(actions[2]);
 			let envr_l		<- float(actions[3]);
-			let envr_n		<- int(actions[4]);
+			let envr_p		<- float(actions[4]);
 
-			write actions_msg + " : " + fin_support + " " + training_l +","+training_n + " " + envr_l + "," + envr_n;
+			write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
 			
 			do financial_support(fin_support);
-			do training(training_l, training_n);
-			do environmental_sensibilisation(envr_l, envr_n);
+			do training(training_l, training_p);
+			do environmental_sensibilisation(envr_l, envr_p);
 		}
 		else {
 			write "impossible de recevoir une politique du serveur " + server;
@@ -309,7 +309,8 @@ species institution skills:[tcp] {
 		support[FINANCIAL] <- level;
 	}
 	
-	action training (float level, int number) {
+	action training (float level, float percent) {
+		let number <- int(percent * length(farmer));
 		if (budget > (number * level)) {
 			ask number among farmer  {
 				technical_skill <- technical_skill + level;
@@ -319,7 +320,8 @@ species institution skills:[tcp] {
 		}
 	}
 	
-	action environmental_sensibilisation (float level, int number) {
+	action environmental_sensibilisation (float level, float percent) {
+		let number <- int(percent * length(farmer));
 		if (budget > (number * level / 2.0)) {
 			ask number among farmer  {
 				opinion_on_topics[ENVIRONMENTAL] <- opinion_on_topics[ENVIRONMENTAL] + level; 
