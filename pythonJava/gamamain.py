@@ -26,9 +26,10 @@ n_actions       = 5
 # Observations (3) 
 # 1. Remaining budget - Remaining budget available to implement public policies
 # 2. Fraction of adopters - Fraction of adopters [0,1]
-# 3. Remaining time before ending the simulation - Unit
+# 3. Remaining time before ending the simulation - Unit (in seconds)
 
 n_observations  = 3     # Number of observations from the state of the social planner, can be modified for testing
+
 
 # Rewards
 # 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
@@ -47,7 +48,7 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
         observations:   List[npt.NDArray[np.float64]]   = []
         actions:        List[np.float64]                = []
         rewards:        List[np.float64]                = []
-
+        n_times_4_action = 9 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
         while True:
 
             # we wait for the simulation to send the observations
@@ -60,8 +61,9 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
 
             print("the model received:", received_observations, "and will start processing it")
             obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
+            obs[2] =  float(n_times_4_action-len(rewards)) #We change the last observation to be the number of times that remain for changing the policy
             observations += [obs]
-
+            
             # we then compute a policy and send it back to gama
             policy = gamainteraction.process_observations(policy_manager, obs, n_actions)
             actions += [policy]
@@ -102,9 +104,8 @@ def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]]
 if __name__ == "__main__":
 
     #create neural network model for the environment
-    #by now is just a dummy network for integration testing on the number of observations and number of actions
     model = gama.create_model(n_observations, n_actions)
-    #save this initial  model to the disk
+    #save this initial model to the disk
     model.save(MODELPATH, include_optimizer=False)
 
     # # Save the sum of rewards of each episode for statistics
