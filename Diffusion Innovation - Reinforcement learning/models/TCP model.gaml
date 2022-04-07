@@ -253,7 +253,7 @@ species institution skills:[tcp] {
 	action send_reward {
 		if(at_least_one_policy) {
 			//The reward = percentage of progression of mean_intention
-			let reward 	<- (mean_intention - previous_mean_intention)/ previous_mean_intention;
+			let reward 	<- previous_mean_intention != 0 ? (mean_intention - previous_mean_intention)/ previous_mean_intention : mean_intention ;
 			let sent 	<- send(server, string(reward));
 			if (! sent) {
 				write "impossible d'envoyer le reward " + reward + " à : " + server;
@@ -289,6 +289,7 @@ species institution skills:[tcp] {
 			let envr_p		<- float(actions[4]);
 
 			write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
+			
 			
 			do financial_support(fin_support);
 			do training(training_l, training_p);
