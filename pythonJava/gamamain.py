@@ -13,14 +13,25 @@ import numpy.typing as npt
 from typing import List
 from user_local_variables import *
 
-seed(1)
-
 
 ### Global variables ###
-n_episodes      = 1     # Number of episodes for the training
-n_actions       = 5     # Number of actions discrete actions of the social planner, can be modified for testing
+n_episodes      = 2     # Number of episodes for the training
+# Actions (5) 
+# 1. Nmanagement - Fraction of individuals chosen randomly to be trained [0,1]
+# 2. Thetamanagement - Fraction of increment on the skill of trained agents [0,1]
+# 3. Thetaeconomy - Fraction of financial support [0,1] 
+# 4. Nenvironment - Fraction of individuals chosen randomly to increase environmental awaraness [0,1]
+# 5. Thetaenvironment - Fraction of environmental awareness [0,1]
+n_actions       = 5    
+# Observations (3) 
+# 1. Remaining budget - Remaining budget available to implement public policies
+# 2. Fraction of adopters - Fraction of adopters [0,1]
+# 3. Remaining time before ending the simulation - Unit
+
 n_observations  = 3     # Number of observations from the state of the social planner, can be modified for testing
 
+# Rewards
+# 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
 sumrewards: List[float]     = []
 
@@ -81,9 +92,8 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
 def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float]):
     # Create a training based on model with the desired parameters.
     tr = training.Training(_model)
-    print("observations:", _observations)
-    print("actions:", _actions)
-    print("rewards:", _rewards)
+    
+
     tr.train_step(np.vstack(_observations),
                   np.array(_actions),
                   np.array(_rewards))
