@@ -1,7 +1,7 @@
 import socket
 import sys
 from keras import Sequential
-
+import os
 import gamainteraction
 from policy import Policy
 import training
@@ -15,7 +15,7 @@ from user_local_variables import *
 
 
 ### Global variables ###
-n_episodes      = 2     # Number of episodes for the training
+n_episodes      = 3     # Number of episodes for the training
 # Actions (5) 
 # 1. Nmanagement - Fraction of individuals chosen randomly to be trained [0,1]
 # 2. Thetamanagement - Fraction of increment on the skill of trained agents [0,1]
@@ -34,13 +34,13 @@ n_observations  = 3     # Number of observations from the state of the social pl
 # Rewards
 # 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
-sumrewards: List[float]     = []
+results_filepath            = 'results_sum_of_rewards_gama.csv'
 
 
 # The loop of interaction between the gama simulation and the model
 def gama_interaction_loop(gama_simulation: socket) -> None:
 
-    global sumrewards
+    
     global model
     policy_manager: Policy = Policy(model)
     try:
@@ -88,7 +88,9 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
 
     gama_simulation.send("over\n".encode()) #we send a message for the simulation to wait before closing
     train_model(model, observations, actions, rewards)
-    sumrewards += [sum(rewards)]
+    # Save the sum of rewards of each episode for statistics
+    with open(results_filepath, 'a') as f:
+        f.write(str(sum(rewards))+'\n')
 
 
 def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float]):
@@ -102,14 +104,19 @@ def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]]
 
 
 if __name__ == "__main__":
+    #Check that the result file for evaluation does not exist
+    try:
+      os.remove(results_filepath)
+    except OSError:
+          pass
+    #First line contains the title
+    with open(results_filepath, 'a') as f:
+          f.write('sum_of_episode_rewards\n')
 
     #create neural network model for the environment
     model = gama.create_model(n_observations, n_actions)
     #save this initial model to the disk
     model.save(MODELPATH, include_optimizer=False)
-
-    # # Save the sum of rewards of each episode for statistics
-    # sumrewards = []
     #For each episode
     for i_episode in range(n_episodes):
 
@@ -128,12 +135,4 @@ if __name__ == "__main__":
                                           run_headless_script_path)
 
     input() # to wait
-    print("sum rewards", sumrewards)
-
-    # Plot the results
-    plt.plot(range(n_episodes), sumrewards)
-    plt.xlabel('Episode'); plt.ylabel('Sum of rewards')
-    plt.savefig('gama_results.png')
-    plt.show()
-    # Print statistics measurements
-    print('Mean:', np.mean(sumrewards), ' Median:', np.median(sumrewards), ' Standard dev:', np.std(sumrewards))
+       
