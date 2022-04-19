@@ -45,7 +45,7 @@ n_observations  = 3     # Number of observations from the state of the social pl
 # 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
 results_filepath            = 'results_sum_of_rewards_gama.csv'
-
+results2_filepath           = 'results_number_of_adopters_gama.csv'
 
 # The loop of interaction between the gama simulation and the model
 def gama_interaction_loop(gama_simulation: socket) -> None:
@@ -101,6 +101,10 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
     # Save the sum of rewards of each episode for statistics
     with open(results_filepath, 'a') as f:
         f.write(str(sum(rewards))+'\n')
+    # Save the number of adopters end of each episode for statistics
+    with open(results2_filepath, 'a') as f:
+        f.write(str(observations[-1][1])+'\n')
+
 
 
 def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float]):
@@ -122,6 +126,16 @@ if __name__ == "__main__":
     #First line contains the title
     with open(results_filepath, 'a') as f:
           f.write('sum_of_episode_rewards\n')
+
+    #Check that the result2 file for evaluation does not exist
+    try:
+      os.remove(results2_filepath)
+    except OSError:
+          pass
+    #First line contains the title
+    with open(results2_filepath, 'a') as f:
+          f.write('number_adopters_end_episode\n')
+
 
     #create neural network model for the environment
     model = gama.create_model(n_observations, n_actions)
