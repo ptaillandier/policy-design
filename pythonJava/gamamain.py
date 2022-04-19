@@ -144,5 +144,5 @@ if __name__ == "__main__":
                                           headless_dir,
                                           run_headless_script_path)
 
-    input() # to wait
+#    input() # to wait
        
