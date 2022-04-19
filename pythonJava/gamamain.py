@@ -8,14 +8,24 @@ import training
 import numpy as np
 import matplotlib.pyplot as plt
 import gama
+import argparse
 from numpy.random import seed
 import numpy.typing as npt
 from typing import List
 from user_local_variables import *
 
+parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
+parser.add_argument(
+    "--iters",
+    type=int,
+    default=3,
+    help="Number of iterations.",
+)
+
+args = parser.parse_args()
 
 ### Global variables ###
-n_episodes      = 3     # Number of episodes for the training
+n_episodes      = args.iters     # Number of episodes for the training
 # Actions (5) 
 # 1. Nmanagement - Fraction of individuals chosen randomly to be trained [0,1]
 # 2. Thetamanagement - Fraction of increment on the skill of trained agents [0,1]
