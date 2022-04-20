@@ -1,4 +1,5 @@
 import socket
+import time
 import sys
 from keras import Sequential
 import os
@@ -27,11 +28,12 @@ args = parser.parse_args()
 ### Global variables ###
 n_episodes      = args.iters     # Number of episodes for the training
 # Actions (5) 
-# 1. Nmanagement - Fraction of individuals chosen randomly to be trained [0,1]
+# 1. Fmanagement - Fraction of individuals chosen randomly to be trained [0,1]
 # 2. Thetamanagement - Fraction of increment on the skill of trained agents [0,1]
 # 3. Thetaeconomy - Fraction of financial support [0,1] 
-# 4. Nenvironment - Fraction of individuals chosen randomly to increase environmental awaraness [0,1]
+# 4. Fenvironment - Fraction of individuals chosen randomly to increase environmental awaraness [0,1]
 # 5. Thetaenvironment - Fraction of environmental awareness [0,1]
+# The cost of actions is: 2*Nman(100*Fman)*thetamanagement + N_new_adopters(max100,observed in next state)*thetaeconomy+Nenv(100*Fenv)*thetaenv*100
 n_actions       = 5    
 # Observations (3) 
 # 1. Remaining budget - Remaining budget available to implement public policies
@@ -69,7 +71,7 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
                 print("simulation has ended")
                 break
 
-            print("the model received:", received_observations, "and will start processing it")
+            print("model received:", received_observations)
             obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
             obs[2] =  float(n_times_4_action-len(rewards)) #We change the last observation to be the number of times that remain for changing the policy
             observations += [obs]
@@ -79,13 +81,13 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
             actions += [policy]
 
             str_action = gamainteraction.action_to_string(np.array(policy))
-            print("the model is sending policy", str_action)
+            print("model sending policy:(nman,thetaman,thetaeconomy,nenv,thetaenv)", str_action)
             gama_simulation.send(str_action.encode())
 
             # we finally wait for the reward
-            print("The model is waiting for the reward")
+            #print("The model is waiting for the reward")
             policy_reward = gama_simulation.recv(1024).decode()
-            print("the model received the reward", policy_reward)
+            print("model received reward:", policy_reward)
             rewards += [float(policy_reward)]
             gamainteraction.process_reward(policy_reward, policy, received_observations)
 
@@ -104,7 +106,9 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
     # Save the number of adopters end of each episode for statistics
     with open(results2_filepath, 'a') as f:
         f.write(str(observations[-1][1])+'\n')
-
+    print('observations[-2][0]', observations[-2][0])
+    print('observations[-1][0]', observations[-1][0])
+    
 
 
 def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float]):
@@ -143,7 +147,7 @@ if __name__ == "__main__":
     model.save(MODELPATH, include_optimizer=False)
     #For each episode
     for i_episode in range(n_episodes):
-
+        tic_b_iter = time.time()
         #init server
         listener_port = gamainteraction.listener_init(gama_interaction_loop)
 
@@ -157,6 +161,4 @@ if __name__ == "__main__":
         gamainteraction.run_gama_headless(xml_path,
                                           headless_dir,
                                           run_headless_script_path)
-
-#    input() # to wait
-       
+        print('it:',i_episode,'\t time:',time.time()-tic_b_iter)       

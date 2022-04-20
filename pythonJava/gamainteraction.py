@@ -11,7 +11,7 @@ from policy import Policy
 def simulation_loop(sock_server, gama_interaction_loop) -> None:
     #The server is waiting for clients to connect
     conn, addr = sock_server.accept()
-    print("connected", conn, addr)
+    #print("connected", conn, addr)
 
     #One client connected = one gama simulation
     gama_interaction_loop(conn)
@@ -20,14 +20,14 @@ def simulation_loop(sock_server, gama_interaction_loop) -> None:
 def listener_init(gama_interaction_loop_function) -> int:
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print("Listening Socket successfully created")
+    #print("Listening Socket successfully created")
 
     s.bind(('', 0)) #localhost + port given by the os
     port = s.getsockname()[1]
-    print("Listening socket bound to %s" % port)
+    #print("Listening socket bound to %s" % port)
 
     s.listen()
-    print("Listening socket started listening")
+    #print("Listening socket started listening")
 
     start_new_thread(simulation_loop, (s, gama_interaction_loop_function))
 
