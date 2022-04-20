@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 import tensorflow as tf
 from keras import Sequential
-from numpy.random import seed
+import tensorflow_probability as tfp
 
 
 class Policy:
@@ -21,24 +21,23 @@ class Policy:
     # Choose an action given some observations
     # single is used to specify if it's online training
     def choose_action(self, raw_observation: npt.NDArray[np.float64], nb_actions: int, single=True):
-
-        tf.random.set_seed(1)
-        seed(1)
-        # add batch dimension to the observation if only a single example was provided
-        raw_observation = np.expand_dims(raw_observation, axis=0) if single else raw_observation
-        # call to preprocess the raw observation
-        observation = self.process_raw_observation(raw_observation)
-        # feed the observations through the model to predict the log probabilities of each possible action
-        logits = self.model.predict(observation)
-        print('logits', logits)
-        # choose an action from the categorical distribution defined by the log probabilities of each possible action
-        action = tf.random.categorical(logits, num_samples=nb_actions, seed=1)
-        # action = action.numpy().flatten()
-        print('action', action)
-        if single:
-            action = action[0]
-        return action, observation.flatten()
-
+        try:
+              # add batch dimension to the observation if only a single example was provided
+              raw_observation = np.expand_dims(raw_observation, axis=0) if single else raw_observation
+              # call to preprocess the raw observation
+              observation = self.process_raw_observation(raw_observation)
+              # feed the observations through the model to predict the mean and log sigma of each action
+              distributions_params = self.model(observation)
+              mus, logsigmas = tf.split(distributions_params, 2, axis=1)
+              mussigmoid = tf.sigmoid(mus) #conversion
+              max_std = 0.3
+              min_std = 0.005
+              logsigmassigmoid = max_std*tf.sigmoid(logsigmas) + min_std #conversion
+              distributions = tfp.distributions.TruncatedNormal(mussigmoid, logsigmassigmoid, low=[0], high=[1])
+              actions = distributions.sample()
+              return actions.numpy().flatten(), observation.flatten()
+        except Exception as e:
+              print('Exception handled in choose_action', e)   
 
     def process_raw_observation(self, raw_observation: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         """ Function that process the raw observations obtained from the environment. 
