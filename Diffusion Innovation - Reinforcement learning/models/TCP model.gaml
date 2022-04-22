@@ -288,7 +288,7 @@ species institution skills:[tcp] {
 			let envr_l		<- float(actions[3]);
 			let envr_p		<- float(actions[4]);
 
-			//write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
+			write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
 			
 			
 			do financial_support(fin_support);
