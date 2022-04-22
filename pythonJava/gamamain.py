@@ -8,12 +8,12 @@ from policy import Policy
 import training
 import numpy as np
 import matplotlib.pyplot as plt
-import gama
 import argparse
 from numpy.random import seed
 import numpy.typing as npt
 from typing import List
 from user_local_variables import *
+import utils
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
@@ -23,10 +23,18 @@ parser.add_argument(
     help="Number of iterations.",
 )
 
+parser.add_argument(
+    "--sizes",
+    type=int,
+    nargs = "+",
+    default=[32,32],
+    help="Size of the different layers of the neural network.",
+)
 args = parser.parse_args()
 
 ### Global variables ###
 n_episodes      = args.iters     # Number of episodes for the training
+layers_sizes = args.sizes 
 # Actions (5) 
 # 1. Fmanagement - Fraction of individuals chosen randomly to be trained [0,1]
 # 2. Thetamanagement - Fraction of increment on the skill of trained agents [0,1]
@@ -35,6 +43,8 @@ n_episodes      = args.iters     # Number of episodes for the training
 # 5. Thetaenvironment - Fraction of environmental awareness [0,1]
 # The cost of actions is: 2*Nman(100*Fman)*thetamanagement + N_new_adopters(max100,observed in next state)*thetaeconomy+Nenv(100*Fenv)*thetaenv*100
 n_actions       = 5    
+layers_sizes.append(n_actions*2) #Add the last output layer considering the number of actions
+
 # Observations (3) 
 # 1. Remaining budget - Remaining budget available to implement public policies
 # 2. Fraction of adopters - Fraction of adopters [0,1]
@@ -153,7 +163,10 @@ if __name__ == "__main__":
 
 
     #create neural network model for the environment
-    model = gama.create_model(n_observations, n_actions)
+    #model = gama.create_model(n_observations, n_actions)
+    
+    model = utils.mlp(n_observations, layers_sizes)
+    print('model.summary()', model.summary())
     #save this initial model to the disk
     model.save(MODELPATH, include_optimizer=False)
     #For each episode

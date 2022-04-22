@@ -50,5 +50,12 @@ def normalize(x):
     x /= np.std(x)
     return x
 
-
-
+# Function that builds a customized multilayer perceptron (MLP) neural network
+def mlp(n_observations, sizes, activation='relu', output_activation=None):
+    model = tf.keras.Sequential()
+    model.add(tf.keras.Input(shape=(n_observations,)))
+    for size in sizes[:-1]:
+        x = tf.keras.layers.Dense(units=size, activation=activation)
+        model.add(x)
+    model.add(tf.keras.layers.Dense(units=sizes[-1], activation=output_activation))
+    return model
