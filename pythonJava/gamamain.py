@@ -61,12 +61,15 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
         actions:        List[np.float64]                = []
         rewards:        List[np.float64]                = []
         n_times_4_action = 9 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
+        time_updating_policy = 0
+        time_simulation = 0
         while True:
 
             # we wait for the simulation to send the observations
             print("waiting for observations")
+            tic_b =  time.time()
             received_observations: str = gama_simulation.recv(1024).decode()
-
+            time_simulation = time_simulation + time.time()-tic_b
             if received_observations == "END":
                 print("simulation has ended")
                 break
@@ -77,16 +80,20 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
             observations += [obs]
             
             # we then compute a policy and send it back to gama
+            tic_b = time.time()
             policy = gamainteraction.process_observations(policy_manager, obs, n_actions)
+            time_updating_policy =  time_updating_policy + time.time() - tic_b
             actions += [policy]
 
             str_action = gamainteraction.action_to_string(np.array(policy))
             print("model sending policy:(nman,thetaman,thetaeconomy,nenv,thetaenv)", str_action)
             gama_simulation.send(str_action.encode())
 
+            tic_b = time.time()
             # we finally wait for the reward
             #print("The model is waiting for the reward")
             policy_reward = gama_simulation.recv(1024).decode()
+            time_simulation = time_simulation + time.time() - tic_b
             print("model received reward:", policy_reward)
             rewards += [float(policy_reward)]
             gamainteraction.process_reward(policy_reward, policy, received_observations)
@@ -99,7 +106,9 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
         print(sys.exc_info()[0])
 
     gama_simulation.send("over\n".encode()) #we send a message for the simulation to wait before closing
+    tic_b = time.time()
     train_model(model, observations, actions, rewards)
+    training_time = time.time() - tic_b
     # Save the sum of rewards of each episode for statistics
     with open(results_filepath, 'a') as f:
         f.write(str(sum(rewards))+'\n')
@@ -108,7 +117,9 @@ def gama_interaction_loop(gama_simulation: socket) -> None:
         f.write(str(observations[-1][1])+'\n')
     print('observations[-2][0]', observations[-2][0])
     print('observations[-1][0]', observations[-1][0])
-    
+    print('\t','updating policy time', time_updating_policy)
+    print('\t','simulation time', time_simulation)
+    print('\t','training time', training_time)
 
 
 def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float]):
@@ -157,6 +168,7 @@ if __name__ == "__main__":
                                                         gaml_file_path,
                                                         experiment_name
                                                         )
+        print('\t','setting up gama', time.time()-tic_b_iter)
         # run gama
         gamainteraction.run_gama_headless(xml_path,
                                           headless_dir,
