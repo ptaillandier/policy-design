@@ -132,33 +132,18 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode()) -> 
        print(sys.exc_info()[0])
 
     gama_simulation.send("over\n".encode()) #we send a message for the simulation to wait before closing
-        # Save the sum of rewards of each episode for statistics
-        #with open(results_filepath, 'a') as f:
-            #f.write(str(sum(rewards))+'\n')
-        # Save the number of adopters end of each episode for statistics
-        #with open(results2_filepath, 'a') as f:
-            #f.write(str(observations[-1][1])+'\n')
-        #print('observations[-2][0]', observations[-2][0])
-        #print('observations[-1][0]', observations[-1][0])
+      
     print('\t','updating policy time', time_updating_policy)
     print('\t','simulation time', time_simulation)
     return episode
 
-def train_model2(_model: Sequential, _batch_episodes: List[utils.Episode], _discount_factor:float):
+def train_model(_model: Sequential, _batch_episodes: List[utils.Episode], _discount_factor:float):
     # Create a training based on model with the desired parameters.
     tr = training.Training(_model, discount_factor=_discount_factor)
 
     tr.train(_batch_episodes)
 
 
-def train_model(_model: Sequential, _observations: List[npt.NDArray[np.float64]], _actions: List[int], _rewards: List[float], _discount_factor:float):
-    # Create a training based on model with the desired parameters.
-    tr = training.Training(_model, discount_factor=_discount_factor)
-    
-
-    tr.train_step(np.vstack(_observations),
-                  np.array(_actions),
-                  np.array(_rewards))
 
 
 if __name__ == "__main__":
@@ -229,8 +214,7 @@ if __name__ == "__main__":
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
-        train_model2(model, batch_episodes, discount_factor)
-        #train_model(model, observations, actions, rewards, discount_factor)
+        train_model(model, batch_episodes, discount_factor)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)       
