@@ -1,7 +1,7 @@
 import tensorflow as tf
 import utils
 import tensorflow_probability as tfp
-
+import numpy as np
 
 class Training:
     """Class that encodes the deep reinforcement learning training logic.
@@ -88,6 +88,7 @@ class Training:
         neg_logprob = -1*distributions.log_prob(actions)
         neg_logprob = tf.reduce_sum(neg_logprob, axis=1)
         # Scale the negative log probability by the rewards
-        loss = tf.reduce_mean(tf.cast(neg_logprob, tf.float64) * rewards)
+        #loss = tf.reduce_mean(tf.cast(neg_logprob, tf.float64) * rewards)
+        loss = tf.reduce_mean(neg_logprob * rewards)
         return loss
 
