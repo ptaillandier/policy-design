@@ -4,20 +4,18 @@ from _thread import *
 from typing import Callable, TextIO
 import numpy.typing as npt
 import numpy as np
-
+import utils
 from policy import Policy
 
 
-def simulation_loop(sock_server, gama_interaction_loop) -> None:
+def simulation_loop(sock_server, gama_interaction_loop, episode) -> None:
     #The server is waiting for clients to connect
     conn, addr = sock_server.accept()
     #print("connected", conn, addr)
-
     #One client connected = one gama simulation
-    gama_interaction_loop(conn)
+    gama_interaction_loop(conn, episode)
 
-
-def listener_init(gama_interaction_loop_function) -> int:
+def listener_init(gama_interaction_loop_function, episode) -> int:
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #print("Listening Socket successfully created")
@@ -29,7 +27,7 @@ def listener_init(gama_interaction_loop_function) -> int:
     s.listen()
     #print("Listening socket started listening")
 
-    start_new_thread(simulation_loop, (s, gama_interaction_loop_function))
+    start_new_thread(simulation_loop, (s, gama_interaction_loop_function, episode))
 
     return port
 
