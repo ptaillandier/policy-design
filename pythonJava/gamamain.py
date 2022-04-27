@@ -7,11 +7,9 @@ import gamainteraction
 from policy import Policy
 import training
 import numpy as np
-import matplotlib.pyplot as plt
+from typing import List, TextIO, IO
 import argparse
-from numpy.random import seed
 import numpy.typing as npt
-from typing import List
 from user_local_variables import *
 import utils
 
@@ -85,7 +83,8 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode()) -> 
     
     global model
     policy_manager: Policy = Policy(model)
-  
+    gama_socket_as_file: TextIO[IO[str]] = gama_simulation.makefile(mode='rw')
+
     try:
         n_times_4_action = 9 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
         time_updating_policy = 0
@@ -94,30 +93,31 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode()) -> 
         while True:
            # we wait for the simulation to send the observations
            print("waiting for observations")
-           tic_b =  time.time()
-           received_observations: str = gama_simulation.recv(1024).decode()
+           tic_b = time.time()
+           received_observations: str = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time()-tic_b
-           if received_observations == "END":
+           if received_observations == "END\n":
                print("simulation has ended")
                break
 
            print("model received:", received_observations)
            obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
-           obs[2] =  float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
+           obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
             
            # we then compute a policy and send it back to gama
            tic_b = time.time()
            action = gamainteraction.process_observations(policy_manager, obs, n_actions)
-           time_updating_policy =  time_updating_policy + time.time() - tic_b
+           time_updating_policy = time_updating_policy + time.time() - tic_b
 
            str_action = gamainteraction.action_to_string(np.array(action))
            print("model sending policy:(nman,thetaman,thetaeconomy,nenv,thetaenv)", str_action)
-           gama_simulation.send(str_action.encode())
+           gama_socket_as_file.write(str_action)
+           gama_socket_as_file.flush()
 
            tic_b = time.time()
            # we finally wait for the reward
            #print("The model is waiting for the reward")
-           policy_reward = gama_simulation.recv(1024).decode()
+           policy_reward = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time() - tic_b
            print("model received reward:", policy_reward)
                
@@ -129,9 +129,12 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode()) -> 
     except ConnectionResetError:
        print("connection reset, end of simulation")
     except:
-       print(sys.exc_info()[0])
+        print("EXCEPTION pendant l'execution")
+        print(sys.exc_info()[0])
+        sys.exit(-1)
 
-    gama_simulation.send("over\n".encode()) #we send a message for the simulation to wait before closing
+    gama_socket_as_file.write("over\n") #we send a message for the simulation to wait before closing
+    gama_socket_as_file.flush()
       
     print('\t','updating policy time', time_updating_policy)
     print('\t','simulation time', time_simulation)
@@ -193,9 +196,11 @@ if __name__ == "__main__":
                                                             )
             print('\t','setting up gama', time.time()-tic_setting_gama)
             # run gama
-            gamainteraction.run_gama_headless(xml_path,
-                                              headless_dir,
-                                              run_headless_script_path)
+            if gamainteraction.run_gama_headless(xml_path,
+                                                 headless_dir,
+                                                 run_headless_script_path) == 2:
+                print("simulation " + str(i_episode) + " ended in error, stopping everything")
+                sys.exit(-1)
             batch_episodes.append(episode)
         
         i_episode = 0
