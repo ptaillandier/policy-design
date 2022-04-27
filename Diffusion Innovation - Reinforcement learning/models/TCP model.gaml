@@ -106,16 +106,16 @@ global {
 	
 
 	reflex end_simulation when:(time >= end_simulation_after) {
-		write "ending simulation";
+		//write "ending simulation";
 		ask institution {
-			write "simulation sending last reward";
+			//write "simulation sending last reward";
 			do send_reward;
-			write "simulation sending end signal";
+			//write "simulation sending end signal";
 			do send_end;
-			write "simulation waiting for server's end signal";
+			//write "simulation waiting for server's end signal";
 			do read_line from:server;//when the server is over he sends a message to the simulation, needed to prevent connexion reset exceptions
 		}
-		write "simulation pausing";
+		//write "simulation pausing";
 		do die;	
 	}
 }
@@ -288,7 +288,7 @@ species institution skills:[tcp] {
 			let envr_l		<- float(actions[3]);
 			let envr_p		<- float(actions[4]);
 
-			write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
+			//write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
 			
 			
 			do financial_support(fin_support);
