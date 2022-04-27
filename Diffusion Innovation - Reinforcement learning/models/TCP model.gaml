@@ -244,7 +244,7 @@ species institution skills:[tcp] {
 	}
 
 	action send_end {
-		let sent 	<- send(server, "END");
+		let sent 	<- send(server, "END\n");
 		if (! sent) {
 			write "impossible d'envoyer le message de fin de simulation à : " + server;
 		}
@@ -254,7 +254,7 @@ species institution skills:[tcp] {
 		if(at_least_one_policy) {
 			//The reward = percentage of progression of mean_intention
 			let reward 	<- previous_mean_intention != 0 ? (mean_intention - previous_mean_intention)/ previous_mean_intention : mean_intention ;
-			let sent 	<- send(server, string(reward));
+			let sent 	<- send(server, string(reward) + "\n");
 			if (! sent) {
 				write "impossible d'envoyer le reward " + reward + " à : " + server;
 			}
@@ -267,7 +267,7 @@ species institution skills:[tcp] {
 
 	action send_observations {
 		//budget restant, nb d'adoptant/taux, temps restant
-		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")";
+		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")\n" ;
 		let sent <- send(server, observations);
 		if(!sent) {
 			write "Impossible d'envoyer les observations "+ observations + " au serveur " + server;
@@ -288,7 +288,7 @@ species institution skills:[tcp] {
 			let envr_l		<- float(actions[3]);
 			let envr_p		<- float(actions[4]);
 
-			//write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
+			write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
 			
 			
 			do financial_support(fin_support);
