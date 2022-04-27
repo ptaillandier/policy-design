@@ -78,7 +78,7 @@ results_filepath            = 'results_sum_of_rewards_gama.csv'
 results2_filepath           = 'results_number_of_adopters_gama.csv'
 
 # The loop of interaction between the gama simulation and the model
-def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode()) -> None:
+def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> None:
 
     
     global model
