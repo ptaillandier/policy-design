@@ -37,19 +37,19 @@ class Policy:
               actions = distributions.sample()
               actions = actions.numpy().flatten()
               #Implement the bounding of actions to not exceed the budget (observation[0])
-              #print('actions (Fmanagement,Thetamanagement,Thetaeconomy,Fenvironment,Thetaenvironment)', actions)
+              #print('actions (Thetaeconomy ,Thetamanagement,Fmanagement,Thetaenvironment ,Fenvironment)', actions)
               #print('remaining budget', observation[0][0])
               remaining_budget = observation[0][0]
               nindividuals = 100 #The number of individuals of the simulation is fixed to 100
               
               #Compute how much budget we will be using in management and environmental actions with current actions
-              budget_4_management = 2*nindividuals*actions[0]*actions[1]
+              budget_4_management = nindividuals*actions[2]*actions[1]
               #print('budget_4_management', budget_4_management)
-              budget_4_environmental = nindividuals*actions[3]*actions[4]
+              budget_4_environmental = 0.5*nindividuals*actions[4]*actions[3]
               #print('budget_4_environmental', budget_4_environmental)
               #We leave budget for a 10 new adopters to get, if enough budget 
               fraction_new_adopt_h = 0.1
-              budget_4_economy = nindividuals*fraction_new_adopt_h*actions[2]
+              budget_4_economy = nindividuals*fraction_new_adopt_h*actions[0]
               #print('budget_4_economy', budget_4_economy)
               all_budget = budget_4_management + budget_4_environmental + budget_4_economy
               budget_2_reduce = all_budget - remaining_budget
@@ -66,22 +66,22 @@ class Policy:
                   factor_2_reduce_management = (budget_4_management-budget_2_reduce_management)/budget_4_management
                   #print('factor_2_reduce_management', factor_2_reduce_management)
                   #Update management action
-                  actions[0] = actions[0]*factor_2_reduce_management
+                  actions[2] = actions[2]*factor_2_reduce_management
                   factor_2_reduce_environmental = (budget_4_environmental-budget_2_reduce_environmental)/budget_4_environmental
                   #print('factor_2_reduce_environmental', factor_2_reduce_environmental)
                   #Update environmenal action
-                  actions[3] = actions[3]*factor_2_reduce_environmental
+                  actions[4] = actions[4]*factor_2_reduce_environmental
                   factor_2_reduce_economy = (budget_4_economy-budget_2_reduce_economy)/budget_4_economy
                   #print('factor_2_reduce_economy', factor_2_reduce_economy)
                   #Update economy action
-                  actions[2] = actions[2]*factor_2_reduce_economy
+                  actions[0] = actions[0]*factor_2_reduce_economy
 
                   #Recompute the new budget for the new actions
-                  budget_4_management = 2*nindividuals*actions[0]*actions[1]
-                  budget_4_environmental = nindividuals*actions[3]*actions[4]
-                  budget_4_economy = nindividuals*fraction_new_adopt_h*actions[2]
+                  budget_4_management = nindividuals*actions[2]*actions[1]
+                  budget_4_environmental = 0.5*nindividuals*actions[4]*actions[3]
+                  budget_4_economy = nindividuals*fraction_new_adopt_h*actions[0]
                   #print('new budget', budget_4_management+budget_4_environmental+budget_4_economy)
-                  #print('actions (Fmanagement,Thetamanagement,Thetaeconomy,Fenvironment,Thetaenvironment)', actions)
+                  #print('actions (Thetaeconomy ,Thetamanagement,Fmanagement,Thetaenvironment ,Fenvironment)', actions)
 
               return actions, observation.flatten()
         except Exception as e:

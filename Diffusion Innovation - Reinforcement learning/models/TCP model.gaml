@@ -312,7 +312,9 @@ species institution skills:[tcp] {
 	
 	action training (float level, float percent) {
 		let number <- int(percent * length(farmer));
+		//write "number of trained agents " + number;
 		if (budget > (number * level)) {
+		        //write "training applied enough budget. Old budget: "+ budget + " new budget : " + (budget - (number * level));
 			ask number among farmer  {
 				technical_skill <- technical_skill + level;
 				opinion_on_topics[FARM_MANAGEMENT] <- opinion_on_topics[FARM_MANAGEMENT] + level; 
@@ -323,7 +325,9 @@ species institution skills:[tcp] {
 	
 	action environmental_sensibilisation (float level, float percent) {
 		let number <- int(percent * length(farmer));
-		if (budget > (number * level / 2.0)) {
+		//write "number of environminazed agents " + number;
+		if (budget > ((number * level) / 2.0)) {
+		        //write "environmental applied enough budget. Old budget: " + budget + " new budget " + (budget - (number * level) / 2.0);
 			ask number among farmer  {
 				opinion_on_topics[ENVIRONMENTAL] <- opinion_on_topics[ENVIRONMENTAL] + level; 
 			}
@@ -332,10 +336,12 @@ species institution skills:[tcp] {
 	}
 	
 	action give_financial_support {
+	        //write "financial budget reduced from "+ budget + " to " + (budget - support[FINANCIAL]);
 		budget <- budget - support[FINANCIAL];
 	}
 	
 	reflex receive_budget when: every(#year) {
+	        //write "adding money";
 		do add_money;
 	}
 	reflex choose_policy when: every(6 #month){

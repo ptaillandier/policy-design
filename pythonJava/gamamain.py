@@ -54,12 +54,12 @@ n_episodes = max_training_iters*batch_size #The total number of episodes explore
 print("Total number of episodes =", n_episodes)
 print("max_training_iters", max_training_iters)
 # Actions (5) 
-# 1. Fmanagement - Fraction of individuals chosen randomly to be trained [0,1]
+# 1. Thetaeconomy - Fraction of financial support [0,1] 
 # 2. Thetamanagement - Fraction of increment on the skill of trained agents [0,1]
-# 3. Thetaeconomy - Fraction of financial support [0,1] 
-# 4. Fenvironment - Fraction of individuals chosen randomly to increase environmental awaraness [0,1]
-# 5. Thetaenvironment - Fraction of environmental awareness [0,1]
-# The cost of actions is: 2*Nman(100*Fman)*thetamanagement + N_new_adopters(max100,observed in next state)*thetaeconomy+Nenv(100*Fenv)*thetaenv*100
+# 3. Fmanagement - Fraction of individuals chosen randomly to be trained [0,1]
+# 4. Thetaenvironment - Fraction of environmental awareness [0,1]
+# 5. Fenvironment - Fraction of individuals chosen randomly to increase environmental awaraness [0,1]
+# Cost computed as Nman(100*Fman)*thetamanagement + N_new_adopters(max100,observed in next state)*thetaeconomy+0.5*Nenv(100*Fenv)*thetaenv*100
 n_actions       = 5    
 layers_sizes.append(n_actions*2) #Add the last output layer considering the number of actions
 
@@ -110,7 +110,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            time_updating_policy = time_updating_policy + time.time() - tic_b
 
            str_action = gamainteraction.action_to_string(np.array(action))
-           print("model sending policy:(nman,thetaman,thetaeconomy,nenv,thetaenv)", str_action)
+           print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
            gama_socket_as_file.write(str_action)
            gama_socket_as_file.flush()
 
