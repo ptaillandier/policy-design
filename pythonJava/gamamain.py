@@ -100,7 +100,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
                #print("simulation has ended")
                break
 
-           #print("model received:", received_observations)
+           print("model received:", received_observations)
            obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
             
@@ -110,16 +110,16 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            time_updating_policy = time_updating_policy + time.time() - tic_b
 
            str_action = gamainteraction.action_to_string(np.array(action))
-           #print("model sending policy:(nman,thetaman,thetaeconomy,nenv,thetaenv)", str_action)
+           print("model sending policy:(nman,thetaman,thetaeconomy,nenv,thetaenv)", str_action)
            gama_socket_as_file.write(str_action)
            gama_socket_as_file.flush()
 
            tic_b = time.time()
            # we finally wait for the reward
-           #print("The model is waiting for the reward")
+           print("The model is waiting for the reward")
            policy_reward = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time() - tic_b
-           #print("model received reward:", policy_reward)
+           print("model received reward:", policy_reward)
                
            gamainteraction.process_reward(policy_reward, action, received_observations)
            episode.add_experience(obs, action, float(policy_reward))
