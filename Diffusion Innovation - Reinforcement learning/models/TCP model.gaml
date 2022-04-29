@@ -27,7 +27,7 @@ global {
 	float opinion_diff_accep <- 0.5;
 	float opinion_speed_convergenge <- 0.1;
 	float proba_interaction_day <- 0.1;
-	
+	date starting_date <- date([2022, 1,1]);
 	
 	list<string> topics <- [FINANCIAL, ENVIRONMENTAL, FARM_MANAGEMENT] ;
 	list<string> possible_actions <- [FINANCIAL_SUPPORT, ENV_SENSIBILISATION, TRAINING,DO_NOTHING,TRAINING+"|" +FINANCIAL_SUPPORT, TRAINING+"|" +ENV_SENSIBILISATION, FINANCIAL_SUPPORT+"|" +ENV_SENSIBILISATION, FINANCIAL_SUPPORT+"|" + ENV_SENSIBILISATION+"|" + TRAINING] ;
@@ -340,11 +340,12 @@ species institution skills:[tcp] {
 		budget <- budget - support[FINANCIAL];
 	}
 	
-	reflex receive_budget when: every(#year) {
+	reflex receive_budget when: current_date.month = 1 and current_date.day = 1 {
 	        //write "adding money";
 		do add_money;
+		
 	}
-	reflex choose_policy when: every(6 #month){
+	reflex choose_policy when: (current_date.month in [1,7]) and current_date.day = 1{
 		do select_policy;
 	}
 } 
