@@ -48,7 +48,7 @@ class Policy:
               budget_4_environmental = 0.5*nindividuals*actions[4]*actions[3]
               #print('budget_4_environmental', budget_4_environmental)
               #We leave budget for a 10 new adopters to get, if enough budget 
-              fraction_new_adopt_h = 0.1
+              fraction_new_adopt_h = 0.05
               budget_4_economy = nindividuals*fraction_new_adopt_h*actions[0]
               #print('budget_4_economy', budget_4_economy)
               all_budget = budget_4_management + budget_4_environmental + budget_4_economy
@@ -82,7 +82,8 @@ class Policy:
                   budget_4_economy = nindividuals*fraction_new_adopt_h*actions[0]
                   #print('new budget', budget_4_management+budget_4_environmental+budget_4_economy)
                   #print('actions (Thetaeconomy ,Thetamanagement,Fmanagement,Thetaenvironment ,Fenvironment)', actions)
-
+                  #Check that the actions are not negative
+                  actions = np.maximum(0, actions)
               return actions, observation.flatten()
         except Exception as e:
               print('Exception handled in choose_action', e)   
