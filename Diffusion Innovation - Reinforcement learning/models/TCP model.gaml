@@ -337,7 +337,12 @@ species institution skills:[tcp] {
 	
 	action give_financial_support {
 	        //write "financial budget reduced from "+ budget + " to " + (budget - support[FINANCIAL]);
-		budget <- budget - support[FINANCIAL];
+		if budget >=  support[FINANCIAL] {
+			budget <- budget - support[FINANCIAL];
+		} else {
+			support[FINANCIAL] <- 0.0;
+		}
+		
 	}
 	
 	reflex receive_budget when: current_date.month = 1 and current_date.day = 1 {
