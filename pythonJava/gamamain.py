@@ -74,8 +74,8 @@ n_observations  = 3     # Number of observations from the state of the social pl
 # Rewards
 # 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
-results_filepath            = 'results_sum_of_rewards_gama.csv'
-results2_filepath           = 'results_number_of_adopters_gama.csv'
+results_filepath            = 'results_sum_rewards.csv'
+results2_filepath           = 'results_number_adopters.csv'
 
 # The loop of interaction between the gama simulation and the model
 def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> None:
