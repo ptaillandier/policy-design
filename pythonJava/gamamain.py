@@ -31,7 +31,7 @@ parser.add_argument(
 parser.add_argument(
     "--discount-factor",
     type=float,
-    default=0.95,
+    default=0.99,
     help="Discount factor for the reinforcement learning",
 )
 
@@ -116,7 +116,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
 
            tic_b = time.time()
            # we finally wait for the reward
-           print("The model is waiting for the reward")
+           #print("The model is waiting for the reward")
            policy_reward = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time() - tic_b
            print("model received reward:", policy_reward)
