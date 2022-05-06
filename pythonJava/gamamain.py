@@ -106,7 +106,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
             
            # we then compute a policy and send it back to gama
            tic_b = time.time()
-           action = gamainteraction.process_observations(policy_manager, obs, n_actions)
+           action, bounds = gamainteraction.process_observations(policy_manager, obs, n_actions)
            time_updating_policy = time_updating_policy + time.time() - tic_b
 
            str_action = gamainteraction.action_to_string(np.array(action))
@@ -122,7 +122,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            print("model received reward:", policy_reward)
                
            gamainteraction.process_reward(policy_reward, action, received_observations)
-           episode.add_experience(obs, action, float(policy_reward))
+           episode.add_experience(obs, action, float(policy_reward), bounds)
            i_experience = i_experience + 1
            # new line for better understanding of the logs
            #print()
@@ -182,6 +182,7 @@ if __name__ == "__main__":
         print('i_iter', i_iter)
         tic_b_iter = time.time()
         batch_episodes = []
+ 
         for i_batch in range(batch_size):
             episode = utils.Episode()
             tic_setting_gama = time.time()

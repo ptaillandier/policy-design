@@ -36,19 +36,20 @@ class Training:
         actions = []
         discounted_rewards = []
         observations = []
-
+        bounds = []
         for episode in episodes:
              actions.append(episode.actions)
+             bounds.append(episode.bounds)
              # Compute normalized, discounted, cumulative rewards 
              # What we ultimately care about is which actions are better relative to other actions taken in that episode 
              #-- so, we'll normalize our computed rewards, using the mean and standard deviation of the rewards across the learning episode.
              discounted_rewards.append(utils.discount_rewards(episode.rewards, self.discount_factor))
              observations.append(episode.observations)
         #When normalizing I think we normalize through the whole set of discounted rewards        
-        self.train_step(np.vstack(observations), np.concatenate(actions), utils.normalize(np.concatenate(discounted_rewards)))
+        self.train_step(np.vstack(observations), np.concatenate(actions), utils.normalize(np.concatenate(discounted_rewards)), np.concatenate(bounds))
 
     @tf.function 
-    def train_step(self, observations, actions, discounted_rewards):
+    def train_step(self, observations, actions, discounted_rewards, bounds):
         """Training step function (forward and backpropagation).
 
         Args:
@@ -57,13 +58,12 @@ class Training:
             rewards: rewards
         """
         with tf.GradientTape() as tape:
-              #print('self.model.get_weights()', self.model.get_weights())
               # Forward propagate through the agent network
               distributions_params = self.model(observations)
               mus, logsigmas = tf.split(distributions_params,2, axis=1)
               max_std = 0.3
               min_std = 0.005
-              distributions = tfp.distributions.TruncatedNormal(tf.sigmoid(mus), tf.sigmoid(logsigmas)*max_std + min_std, low=[0], high=[1])
+              distributions = tfp.distributions.TruncatedNormal(tf.sigmoid(mus), tf.sigmoid(logsigmas)*max_std + min_std, low=[0], high=bounds)
               # Call the compute_loss function to compute the loss
               loss = Training.compute_loss(distributions, actions, discounted_rewards)
 

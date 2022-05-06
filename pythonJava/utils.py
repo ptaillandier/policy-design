@@ -13,12 +13,14 @@ class Episode:
         self.observations = []
         self.actions = []
         self.rewards = []
-
+        self.bounds = []
     # Add observations, actions, rewards to memory
-    def add_experience(self, new_observation, new_action, new_reward):
+    def add_experience(self, new_observation, new_action, new_reward, bound=None):
         self.observations.append(new_observation)
         self.actions.append(new_action)
         self.rewards.append(new_reward)
+        if bound is not None:
+            self.bounds.append(bound)
 
 
 # Compute discounted, cumulative rewards per time step (e.g. the rewards-to-go)
