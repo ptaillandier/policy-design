@@ -192,12 +192,15 @@ class Policy:
               # feed the observations through the model to predict the mean and log sigma of each action
               distributions_params = self.model(observation)
               mus, logsigmas = tf.split(distributions_params, 2, axis=1)
+              print('SAMPLED Mus', mus)
               mussigmoid = tf.sigmoid(mus) #conversion
+              print('SIGMOID mus', mussigmoid)
               max_std = 0.3
               min_std = 0.005
               logsigmassigmoid = max_std*tf.sigmoid(logsigmas) + min_std #conversion
+              print('LOGSIGMASSIGMOID', logsigmassigmoid)
               actions, bounds = self.bound_and_sample_actions(mussigmoid, logsigmassigmoid, observation[0][0])
-              print('BOUNDED_ACTIONS', actions)
+              #print('BOUNDED_ACTIONS', actions)
               print('BOUNDS', bounds)
               #distributions = tfp.distributions.TruncatedNormal(mussigmoid, logsigmassigmoid, low=[0], high=[1])
               #actions = distributions.sample()
