@@ -87,6 +87,8 @@ class TrainingDiscrete:
     #@staticmethod
     @tf.function
     def compute_loss(logits_all, actions_all, rewards):
+        #Look at: https://github.com/ray-project/ray/blob/master/rllib/models/tf/tf_action_dist.py
+        #"""MultiCategorical distribution for MultiDiscrete action spaces."""
         for logits, actions in zip(logits_all, actions_all):
             # Compute the negative log probabilities for each action
             neg_logprob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=tf.squeeze(actions))
