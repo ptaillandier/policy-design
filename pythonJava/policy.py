@@ -3,7 +3,7 @@ import numpy.typing as npt
 import tensorflow as tf
 from keras import Sequential
 import tensorflow_probability as tfp
-
+import utils
 
 class Policy:
     """Class that applies the policy for deep reinforcement learning.
@@ -49,9 +49,18 @@ class Policy:
                 #print('\t logsigmassigmoid[0][0]', logsigmassigmoid[0][0])
                 #Create distribution
                 distribution = tfp.distributions.TruncatedNormal(mussigmoid[0][0], logsigmassigmoid[0][0], low=[0], high=[max_bound])
+                print('truncatedNormal_thetaeco_'+str(mussigmoid[0][0].numpy())+'_'+str(logsigmassigmoid[0][0].numpy())+'_'+str(max_bound)+'.png')
+                utils.save_plot_distribution(distribution, 'truncatedNormal_thetaeco_'+str(mussigmoid[0][0].numpy())+'_'+str(logsigmassigmoid[0][0].numpy())+'_'+str(max_bound)+'.png')
                 action= distribution.sample()
-                #print('\t thetaeconomy', action)
-                #print('\t prob(action)', tf.exp(distribution.log_prob(action)), 'logprob(action)', distribution.log_prob(action))
+                print('\t thetaeconomy', action)
+                print('\t prob(action)', distribution.prob(action), 'logprob(action)', distribution.log_prob(action))
+                normalmu = tf.multiply(mussigmoid[0][0], max_bound)
+                distribution = tfp.distributions.Normal(normalmu, logsigmassigmoid[0][0])
+                print('\t normalthetaeconomy', action)
+                print('\t normalprob(action)', tf.exp(distribution.log_prob(action)), 'logprob(action)', distribution.log_prob(action))
+                print('Normal_thetaeco_'+str(normalmu.numpy())+'_'+str(logsigmassigmoid[0][0].numpy())+'.png')
+                utils.save_plot_distribution(distribution, 'Normal_thetaeco_'+str(normalmu.numpy())+'_'+str(logsigmassigmoid[0][0].numpy())+'.png')
+                
                 actions[0] = action.numpy().flatten()
                 #Update remaining budget
                 remaining_budget =  remaining_budget - actions[0]*fraction_new_adopt_h*nindividuals
@@ -199,6 +208,7 @@ class Policy:
               min_std = 0.005
               logsigmassigmoid = max_std*tf.sigmoid(logsigmas) + min_std #conversion
               print('LOGSIGMASSIGMOID', logsigmassigmoid)
+              print('before')
               actions, bounds = self.bound_and_sample_actions(mussigmoid, logsigmassigmoid, observation[0][0])
               #print('BOUNDED_ACTIONS', actions)
               print('BOUNDS', bounds)

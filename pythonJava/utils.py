@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf 
 import scipy.signal
+import matplotlib.pyplot as plt
 
 ### Episode ###
 # Class that store the agent's observations, actions and received rewards from a given episode
@@ -61,3 +62,22 @@ def mlp(n_observations, sizes, activation='relu', output_activation=None):
         model.add(x)
     model.add(tf.keras.layers.Dense(units=sizes[-1], activation=output_activation))
     return model
+
+#Plot distribution
+def plot_distribution(probs, filepath):
+      xstep=1.0/(len(probs)-1)
+      x = np.arange(0.0, 1.0+xstep, xstep)
+      #Plot the results
+      plt.plot(x, probs)
+      plt.xlabel('x')
+      plt.ylabel('Prob(x)')
+      plt.savefig(filepath)
+      plt.clf()
+
+#Save plot distribution
+def save_plot_distribution(distribution, filepath):
+      xstep = 0.01
+      x = np.arange(0.0, 1.0+xstep, xstep)
+      log_probs = distribution.log_prob(x) 
+      probs = np.exp(log_probs)
+      plot_distribution(probs, filepath)

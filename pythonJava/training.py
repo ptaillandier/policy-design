@@ -48,7 +48,7 @@ class Training:
         #When normalizing I think we normalize through the whole set of discounted rewards        
         self.train_step(np.vstack(observations), np.concatenate(actions), utils.normalize(np.concatenate(discounted_rewards)), np.concatenate(bounds))
 
-    @tf.function 
+    #@tf.function 
     def train_step(self, observations, actions, discounted_rewards, bounds):
         """Training step function (forward and backpropagation).
 
@@ -69,6 +69,7 @@ class Training:
 
         # Run backpropagation to minimize the loss using the tape.gradient method
         grads = tape.gradient(loss, self.model.trainable_variables)
+        #print('grads', grads)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
 
@@ -82,9 +83,12 @@ class Training:
     # Returns:
     #   loss
     #@staticmethod
-    @tf.function
+    #@tf.function
     def compute_loss(distributions, actions, rewards):
-         # Compute the negative log probabilities
+        logprob = distributions.log_prob(actions)
+        print('prob of actions', tf.exp(logprob))
+
+        # Compute the negative log probabilities
         neg_logprob = -1*distributions.log_prob(actions)
         neg_logprob = tf.reduce_sum(neg_logprob, axis=1)
         # Scale the negative log probability by the rewards
