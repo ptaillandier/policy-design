@@ -60,15 +60,19 @@ class TrainingDiscrete:
               #print('self.model.get_weights()', self.model.get_weights())
               # Forward propagate through the agent network
               logits_all = self.model(observations)
-              logits_all = tf.split(logits_all, 5, axis=1)
-              
-              print('training_logits_all after splitting', logits_all)
+              split_logits = tf.split(logits_all, 5, axis=1)
+              print('training_logits_all after splitting', split_logits)
               actions = tf.squeeze(actions)
-              print('training_actions_all', actions)
-              actions = tf.split(actions, 5, axis=1)
-              print('training_actions_after_splitting', actions)
+              print('all_actions', actions)
+              split_actions = tf.split(actions, 5, axis=1)
+              print('training_actions_after_splitting', split_actions)
+
+              neg_logprob = [tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=tf.squeeze(actions)) for logits,actions in zip(split_logits, split_actions)]
+              print('neg_logprob', neg_logprob)
+              neg_logprob = tf.reduce_sum(neg_logprob, axis=1) #We sum by rows because they are independendent actions, and it it is the log (equivalent to multiply probabilities) 
+              print('neg_logprob', neg_logprob)
               # Call the compute_loss function to compute the loss
-              loss = TrainingDiscrete.compute_loss(logits_all, actions, discounted_rewards)
+              #loss = TrainingDiscrete.compute_loss(logits_all, actions, discounted_rewards)
 
         # Run backpropagation to minimize the loss using the tape.gradient method
         #grads = tape.gradient(loss, self.model.trainable_variables)
