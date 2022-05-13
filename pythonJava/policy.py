@@ -47,9 +47,10 @@ class Policy:
                 max_bound = max_bound.astype(np.float32)
                 bounds[0] = max_bound
                 print('\t mussigmoid[0][0])', mussigmoid[0][0])
+                print('\t mussigmoid[0][0])*max_bound', mussigmoid[0][0]*max_bound)
                 print('\t logsigmassigmoid[0][0]', logsigmassigmoid[0][0])
                 #Create distribution
-                distribution = action_distributions.SquashedGaussian(mussigmoid[0][0], logsigmassigmoid[0][0], low=0, high=max_bound)
+                distribution = action_distributions.SquashedGaussian(mussigmoid[0][0]*max_bound, logsigmassigmoid[0][0], low=0, high=max_bound)
                 #distribution = tfp.distributions.TruncatedNormal(mussigmoid[0][0], logsigmassigmoid[0][0], low=[0], high=[max_bound])
                 #print('truncatedNormal_thetaeco_'+str(mussigmoid[0][0].numpy())+'_'+str(logsigmassigmoid[0][0].numpy())+'_'+str(max_bound)+'.png')
                 #utils.save_plot_distribution(distribution, 'truncatedNormal_thetaeco_'+str(mussigmoid[0][0].numpy())+'_'+str(logsigmassigmoid[0][0].numpy())+'_'+str(max_bound)+'.png')
@@ -94,9 +95,10 @@ class Policy:
                         max_bound = max_bound.astype(np.float32)
                         bounds[1] = max_bound
                         print('\t mussigmoid[0][1])', mussigmoid[0][1])
+                        print('\t mussigmoid[0][1])*max_bound', mussigmoid[0][1]*max_bound)
                         print('\t logsigmassigmoid[0][1]', logsigmassigmoid[0][1])
                         #Create distribution
-                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][1], logsigmassigmoid[0][1], low=0, high=max_bound)
+                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][1]*max_bound, logsigmassigmoid[0][1], low=0, high=max_bound)
                         #distribution = tfp.distributions.TruncatedNormal(mussigmoid[0][1], logsigmassigmoid[0][1], low=[0], high=[max_bound])
                         action= distribution.sample()
                         #print('\t thetamanagement', action)
@@ -123,10 +125,11 @@ class Policy:
 
                         max_bound = max_bound.astype(np.float32)
                         bounds[2] = max_bound
-                        #print('\t mussigmoid[0][2])', mussigmoid[0][2])
-                        #print('\t logsigmassigmoid[0][2]', logsigmassigmoid[0][2])
+                        print('\t mussigmoid[0][2])', mussigmoid[0][2])
+                        print('\t mussigmoid[0][2])*max_bound', mussigmoid[0][2]*max_bound)
+                        print('\t logsigmassigmoid[0][2]', logsigmassigmoid[0][2])
                         #Create distribution
-                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][2], logsigmassigmoid[0][2], low=0, high=max_bound)
+                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][2]*max_bound, logsigmassigmoid[0][2], low=0, high=max_bound)
                         #distribution = tfp.distributions.TruncatedNormal(mussigmoid[0][2], logsigmassigmoid[0][2], low=[0], high=[max_bound])
                         action= distribution.sample()
                         #print('\t thetamanagement', action)
@@ -165,9 +168,10 @@ class Policy:
                         max_bound = max_bound.astype(np.float32)
                         bounds[3] = max_bound
                         print('\t mussigmoid[0][3])', mussigmoid[0][3])
+                        print('\t mussigmoid[0][3])*max_bound', mussigmoid[0][3]*max_bound)
                         print('\t logsigmassigmoid[0][3]', logsigmassigmoid[0][3])
                         #Create distribution
-                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][3], logsigmassigmoid[0][3], low=0, high=max_bound)
+                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][3]*max_bound, logsigmassigmoid[0][3], low=0, high=max_bound)
                         #distribution = tfp.distributions.TruncatedNormal(mussigmoid[0][3], logsigmassigmoid[0][3], low=[0], high=[max_bound])
                         action= distribution.sample()
                         #print('\t thetaenvironment', action)
@@ -193,9 +197,10 @@ class Policy:
                         max_bound = max_bound.astype(np.float32)
                         bounds[4] = max_bound
                         print('\t mussigmoid[0][4])', mussigmoid[0][4])
+                        print('\t mussigmoid[0][4])*max_bound', mussigmoid[0][4]*max_bound)
                         print('\t logsigmassigmoid[0][4]', logsigmassigmoid[0][4])
                         #Create distribution
-                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][4], logsigmassigmoid[0][4], low=0, high=max_bound)
+                        distribution = action_distributions.SquashedGaussian(mussigmoid[0][4]*max_bound, logsigmassigmoid[0][4], low=0, high=max_bound)
                         #distribution = tfp.distributions.TruncatedNormal(mussigmoid[0][4], logsigmassigmoid[0][4], low=[0], high=[max_bound])
                         action= distribution.sample()
                         #print('\t fractionenvironmental', action)

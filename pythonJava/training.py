@@ -2,6 +2,7 @@ import tensorflow as tf
 import utils
 import tensorflow_probability as tfp
 import numpy as np
+import action_distributions
 
 class Training:
     """Class that encodes the deep reinforcement learning training logic.
@@ -63,7 +64,13 @@ class Training:
               mus, logsigmas = tf.split(distributions_params,2, axis=1)
               max_std = 0.3
               min_std = 0.005
-              distributions = tfp.distributions.TruncatedNormal(tf.sigmoid(mus), tf.sigmoid(logsigmas)*max_std + min_std, low=[0], high=bounds)
+              logsigmas = tf.sigmoid(logsigmas)*max_std + min_std
+              mus = tf.sigmoid(mus)
+              mus = tf.multiply(mus,bounds)
+              print('mus', mus)
+              print('bounds', bounds)
+              distributions = action_distributions.SquashedGaussian(mus, logsigmas, low=0, high=bounds)
+              #distributions = tfp.distributions.TruncatedNormal(tf.multiply(tf.sigmoid(mus), bounds), tf.sigmoid(logsigmas)*max_std + min_std, low=[0], high=bounds)
               # Call the compute_loss function to compute the loss
               loss = Training.compute_loss(distributions, actions, discounted_rewards)
 
@@ -85,14 +92,15 @@ class Training:
     #@staticmethod
     #@tf.function
     def compute_loss(distributions, actions, rewards):
-        logprob = distributions.log_prob(actions)
-        print('prob of actions', tf.exp(logprob))
-
+        neglogprob = -1*distributions.log_prob(actions)
+        print('prob of joint actions', tf.exp(neglogprob))
+        print('logprob of joint actions', neglogprob)
+        print('rewards', rewards)
         # Compute the negative log probabilities
-        neg_logprob = -1*distributions.log_prob(actions)
-        neg_logprob = tf.reduce_sum(neg_logprob, axis=1)
+        #neg_logprob = -1*distributions.log_prob(actions)
+        #neg_logprob = tf.reduce_sum(neg_logprob, axis=1)
         # Scale the negative log probability by the rewards
         #loss = tf.reduce_mean(tf.cast(neg_logprob, tf.float64) * rewards)
-        loss = tf.reduce_mean(neg_logprob * rewards)
+        loss = tf.reduce_mean(neglogprob * rewards)
         return loss
 

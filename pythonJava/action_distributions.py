@@ -24,7 +24,7 @@ class SquashedGaussian():
     The distribution will never return low or high exactly, but
     `low`+SMALL_NUMBER or `high`-SMALL_NUMBER respectively.
     """
-    SMALL_NUMBER = 1e-6
+    SMALL_NUMBER = 1e-8
 
     def __init__(self, mean, std, low: float = -1.0, high: float = 1.0):
         """Parameterizes the distribution via `inputs`.

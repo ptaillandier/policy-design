@@ -8,8 +8,8 @@ from scipy.stats import norm
 class TestDiagGaussian(unittest.TestCase):
 
      def test_normal_distribution(self):
-        mean = 0.51531243
-        sigma = 0.2379091
+        mean = 0.0
+        sigma = 1.0
         distribution = tfp.distributions.Normal(mean, sigma)
         xstep = 0.01
         x = np.arange(0.0, 1.0+xstep, xstep)
@@ -17,12 +17,14 @@ class TestDiagGaussian(unittest.TestCase):
         probs = np.exp(log_probs)
         print('Normal with mean', mean, 'std', sigma,' probs', probs)
         print('Normal probability of mean', distribution.prob(mean))
-        means = np.array([[mean]])
-        stds = np.array([[sigma]])
+        means = np.array([[mean]], dtype=np.float32)
+        stds = np.array([[sigma]], dtype=np.float32)
         diag_distribution = action_distributions.DiagGaussian(means, stds)
+        x = np.reshape(x, (len(x),1))
         log_probs = diag_distribution.log_prob(x)
         probs = np.exp(log_probs)
         print('Diag dist with mean', mean, 'std', sigma,' probs', probs)
+        print('Diag dist with mean', mean, 'std', sigma, 'log_probs', log_probs)
         print('Diag dist probability of mean', distribution.prob(mean))
 
      def test_diaggaussian_distribution(self):
