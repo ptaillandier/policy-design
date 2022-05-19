@@ -102,6 +102,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
 
            print("model received:", received_observations)
            obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
+           print('obs[2]', obs[2])
            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
             
            # we then compute a policy and send it back to gama
