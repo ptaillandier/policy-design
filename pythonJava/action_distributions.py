@@ -2,7 +2,7 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow_probability as tfp
-
+from math import log
 # Min and Max outputs (clipped) from an NN-output layer interpreted as the
 # log(x) of some x (e.g. a stddev of a normal
 # distribution).
@@ -118,7 +118,7 @@ class Dirichlet():
     """Dirichlet distribution for continuous actions that are between
     [0,1] and sum to 1.
     e.g. actions that represent resource allocation."""
-
+    SMALL_NUMBER = 1e-6
     def __init__(self, inputs):
 
         """Input is a tensor of logits. The exponential of logits is used to
@@ -128,6 +128,8 @@ class Dirichlet():
         See issue #4440 for more details.
         """
         self.epsilon = 1e-7
+        #Some components of the samples can be zero due to finite precision. This happens more often when some of the concentrations are very small. Make sure to round the samples to np.finfo(dtype).tiny before computing the density.
+        inputs = tf.clip_by_value(inputs, log(SMALL_NUMBER), -log(SMALL_NUMBER))
         concentration = tf.exp(inputs) + self.epsilon
         self.dist = tfp.distributions.Dirichlet(concentration=concentration, validate_args=True, allow_nan_stats=False)  
 
