@@ -65,6 +65,7 @@ class Policy:
               # feed the observations through the model to predict the mean and log sigma of each action
               distributions_params = self.model(observation)
               logcon, mus, logsigmas = tf.split(distributions_params, [4, 3, 3], axis=1)
+              print('logcon', logcon)
               print('SAMPLED Mus', mus)
               mussigmoid = tf.sigmoid(mus) #conversion
               print('SIGMOID mus', mussigmoid)
