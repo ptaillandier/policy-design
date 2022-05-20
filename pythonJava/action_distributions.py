@@ -39,7 +39,7 @@ class SquashedGaussian():
         # Clip `scale` values (coming from NN) to reasonable values.
         #log_std = tf.clip_by_value(log_std, MIN_LOG_NN_OUTPUT, MAX_LOG_NN_OUTPUT)
         #std = tf.exp(std)
-        print('creating squashed dist with  mean', mean, 'std', std, 'low', low,'high', high)
+        #print('creating squashed dist with  mean', mean, 'std', std, 'low', low,'high', high)
         self.distr = tfp.distributions.Normal(loc=self.mean, scale=std)
         assert np.all(np.less(low, high))
         self.low = low
@@ -113,4 +113,35 @@ class DiagGaussian():
         sample = self.mean + self.std * tf.random.normal(tf.shape(self.mean))
         return sample
 
-   
+
+class Dirichlet():
+    """Dirichlet distribution for continuous actions that are between
+    [0,1] and sum to 1.
+    e.g. actions that represent resource allocation."""
+
+    def __init__(self, inputs):
+
+        """Input is a tensor of logits. The exponential of logits is used to
+        parametrize the Dirichlet distribution as all parameters need to be
+        positive. An arbitrary small epsilon is added to the concentration
+        parameters to be zero due to numerical error.
+        See issue #4440 for more details.
+        """
+        self.epsilon = 1e-7
+        concentration = tf.exp(inputs) + self.epsilon
+        self.dist = tfp.distributions.Dirichlet(concentration=concentration, validate_args=True, allow_nan_stats=False)  
+
+    def log_prob(self, x):
+        # Support of Dirichlet are positive real numbers. x is already
+        # an array of positive numbers, but we clip to avoid zeros due to
+        # numerical errors.
+        x = tf.maximum(x, self.epsilon)
+        x = x / tf.reduce_sum(x, axis=-1, keepdims=True)
+        return self.dist.log_prob(x) 
+
+    def sample(self):
+        return self.dist.sample()
+
+    def prob(self, x):
+        return tf.exp(self.log_prob(x))
+
