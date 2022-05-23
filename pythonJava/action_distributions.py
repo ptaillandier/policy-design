@@ -137,11 +137,8 @@ class Dirichlet():
         # Support of Dirichlet are positive real numbers. x is already
         # an array of positive numbers, but we clip to avoid zeros due to
         # numerical errors.
-        print('x before', x)
         x = tf.maximum(x, self.epsilon)
-        print('x middle', x)
         x = x / tf.reduce_sum(x, axis=-1, keepdims=True)
-        print('x after', x)
         return self.dist.log_prob(x) 
 
     def sample(self):
