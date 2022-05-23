@@ -5,13 +5,14 @@ from keras import Sequential
 import os
 import gamainteraction
 from policy2 import Policy
-from training2 import Training
+from actor_training import ActorTraining
 import numpy as np
 from typing import List, TextIO, IO
 import argparse
 import numpy.typing as npt
 from user_local_variables import *
 import utils
+import tensorflow as tf
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
@@ -151,11 +152,10 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     print('\t','simulation time', time_simulation)
     return episode
 
-def train_model(_model: Sequential, _batch_episodes: List[utils.Episode], _discount_factor:float):
+def train_model(_model: Sequential, _batch_episodes: List[utils.Episode], _batch_deltas: List[float],  _clipping_ratio:float, _target_kl:float, _train_policy_iterations:int):
     # Create a training based on model with the desired parameters.
-    tr = Training(_model, discount_factor=_discount_factor)
-
-    tr.train(_batch_episodes)
+    tr = ActorTraining(_model, clipping_ratio=_clipping_ratio, target_kl=_target_kl)
+    tr.train(_batch_episodes, _batch_deltas, _train_policy_iterations)
 
 
 
@@ -219,7 +219,19 @@ if __name__ == "__main__":
                 print("simulation " + str(i_episode) + " ended in error, stopping everything")
                 sys.exit(-1)
             batch_episodes.append(episode)
-        
+            #
+            # 1. Compute discounted deltas for this episode
+            #
+            # 1.1 Compute the values for observations present in the episode
+            episode_values = critic_model(np.vstack(episode.observations))
+            episode_values = np.append(episode_values, 0)
+            # 1.2 Compute discounted deltas for this episode
+            episode_deltas = utils.discount_rewards(episode.rewards + discount_factor*episode_values[1:] - episode_values[:-1], discount_factor * gae_lambda)
+            episode_deltas = episode_deltas.astype('float32')
+            # 1.3 Store deltas to the batch
+            batch_deltas.append(episode_deltas)
+
+                    
         i_episode = 0
         for episode in batch_episodes:
             sum_episode_rewards = sum(episode.rewards) #the sum of discounted? rewards of an episode is the basic component for all performance stadistics
@@ -236,7 +248,7 @@ if __name__ == "__main__":
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
-        train_model(model, batch_episodes, discount_factor)
+        train_model(actor_model, batch_episodes, batch_deltas, clipping_ratio, target_kl, train_policy_iterations)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)       

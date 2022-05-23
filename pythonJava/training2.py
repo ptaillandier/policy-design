@@ -101,8 +101,8 @@ class Training:
     #@staticmethod
     #@tf.function
     def compute_loss(neglogprob, actions, rewards):
-        print('prob of joint actions', tf.exp(neglogprob))
-        print('logprob of joint actions', neglogprob)
+        print('prob of joint actions', tf.exp(-neglogprob))
+        print('neglogprob of joint actions', neglogprob)
         print('rewards', rewards)
         # Compute the negative log probabilities
         #neg_logprob = -1*distributions.log_prob(actions)
