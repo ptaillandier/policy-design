@@ -128,7 +128,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            time_updating_policy = time_updating_policy + time.time() - tic_b
 
            str_action = gamainteraction.action_to_string(np.array(action_env))
-           #store in the resuls file the sum of rewards for this episode
+           #store in the result file the actions taken
            with open(results3_filepath, 'a') as f:
                f.write(str(episode.id)+','+str(i_experience)+','+ str_action+'\n')
 
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     with open(results2_filepath, 'a') as f:
           f.write('number_adopters_end_episode\n')
 
-    #Check that the result2 file for evaluation does not exist
+    #Check that the result3 file for evaluation does not exist
     try:
       os.remove(results3_filepath)
     except OSError:

@@ -12,6 +12,11 @@ import argparse
 import numpy.typing as npt
 from user_local_variables import *
 import utils
+import tensorflow as tf
+
+config = tf.compat.v1.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.compat.v1.Session(config=config)
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
@@ -77,6 +82,8 @@ n_observations  = 3     # Number of observations from the state of the social pl
 MODELPATH                   = 'nngamma' # Path to the file where to store the neural network
 results_filepath            = 'results_sum_rewards.csv'
 results2_filepath           = 'results_number_adopters.csv'
+results3_filepath           = 'results_actions.csv'
+
 
 # The loop of interaction between the gama simulation and the model
 def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> None:
@@ -111,6 +118,10 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            time_updating_policy = time_updating_policy + time.time() - tic_b
 
            str_action = gamainteraction.action_to_string(np.array(action_env))
+           #store in the result file the actions taken
+           with open(results3_filepath, 'a') as f:
+               f.write(str(episode.id)+','+str(i_experience)+','+ str_action+'\n')
+
            print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
            gama_socket_as_file.write(str_action)
            gama_socket_as_file.flush()
@@ -169,15 +180,20 @@ if __name__ == "__main__":
     with open(results2_filepath, 'a') as f:
           f.write('number_adopters_end_episode\n')
 
+    #Check that the result3 file for evaluation does not exist
+    try:
+      os.remove(results3_filepath)
+    except OSError:
+          pass
+    #First line contains the title
+    with open(results3_filepath, 'a') as f:
+          f.write('iteration, decision step, thetaeconomy, thetamanagement, fmanagement, thetaenviron, fenviron\n')
 
-    #create neural network model for the environment
-    #model = gama.create_model(n_observations, n_actions)
     
     model = utils.mlp(n_observations, layers_sizes)
     print('model.summary()', model.summary())
-    #save this initial model to the disk
-    model.save(MODELPATH, include_optimizer=False)
     print('max_training_iters', max_training_iters)
+    i_episode = 0
     #For each training iteration
     for i_iter in range(max_training_iters):
         print('i_iter', i_iter)
@@ -186,6 +202,7 @@ if __name__ == "__main__":
  
         for i_batch in range(batch_size):
             episode = utils.Episode()
+            episode.set_id(i_episode)
             tic_setting_gama = time.time()
             #init server
             listener_port = gamainteraction.listener_init(gama_interaction_loop, episode)
@@ -205,7 +222,7 @@ if __name__ == "__main__":
                 sys.exit(-1)
             batch_episodes.append(episode)
         
-        i_episode = 0
+        i_batch_episode = 0
         for episode in batch_episodes:
             sum_episode_rewards = sum(episode.rewards) #the sum of discounted? rewards of an episode is the basic component for all performance stadistics
             #store in the resuls file the sum of rewards for this episode
@@ -216,12 +233,13 @@ if __name__ == "__main__":
                 f.write(str(episode.observations[-1][1])+'\n')
             print('episode.observations[-2][0]', episode.observations[-2][0])
             print('episode.observations[-1][0]', episode.observations[-1][0])
-            print('Episode:', i_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.observations[-1][1]), '\n')
-            i_episode = i_episode + 1
+            print('Episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.observations[-1][1]), '\n')
+            i_batch_episode = i_batch_episode + 1
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
         train_model(model, batch_episodes, discount_factor)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
-        print('it:',i_iter,'\t time:',time.time()-tic_b_iter)       
+        print('it:',i_iter,'\t time:',time.time()-tic_b_iter)
+        i_episode = i_episode + 1       
