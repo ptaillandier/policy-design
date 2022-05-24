@@ -62,10 +62,16 @@ policy_learning_rate = 3e-3
 critic_learning_rate = 1e-4
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
 gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
-train_policy_iterations = 80 #Maximum number of gradient descent steps to take on policy loss per epoch (aka training iteration). Early stopping may cause optimizer to take fewer than this
+train_policy_iterations = 80 #Maximum number of gradient descent steps to take on policy loss per epoch (aka training iteration). Early stopping may cause optimizer to take fewer than this. In others implementation is called update_epochs (i.e. number of epochs to update the policy and default set to 10) and it is the same number for policy and critic
 train_critic_iterations = 80 #Number of gradient descent steps to take on value function per epoch (aka training iteration)
 ### End configuration specific ppo variables ###
-
+## From others implementation
+#args.batch_size = int(args.num_envs * args.num_steps)
+#args.minibatch_size = int(args.batch_size // args.num_minibatches)
+#where num_envs is the number of parallel game environments default = 1
+#where num_steps is the number of steps to run in each environment per policy rollout. Default 2048
+# In our case each episode has 10 experiences/steps and we specify the number of episodes via batch_size
+# so the conversion is num_steps = 10*batch_size, for a default num_steps 2048 will be batch_size=200
 n_episodes = max_training_iters*batch_size #The total number of episodes explored will be the number of iterations for the training par the size of batch examples processed on each training
 print("Total number of episodes =", n_episodes)
 print("max_training_iters", max_training_iters)

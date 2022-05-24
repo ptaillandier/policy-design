@@ -54,8 +54,9 @@ class ActorTraining:
         print('neglogprob of joint actions', joint_neg_logprob)
 
         #Update the policy and implement early stopping using KL divergence
-        for _ in range(train_policy_iterations):
+        for tpi in range(train_policy_iterations):
             kl = self.train_step(np.vstack(observations), np.concatenate(actions), advantages, joint_neg_logprob)
+            print('train_policy_iter: '+str(tpi)+' kl:'+str(kl))
             if kl > 1.5 * self.target_kl:
                 print('Early stopping')
                 # Early stopping
@@ -97,14 +98,18 @@ class ActorTraining:
               step_neglogprobability = ActorTraining.compute_joint_neglogprob(self.model, actions, observations)
               ratio = tf.exp(-step_neglogprobability + neglogprobability_buffer)
               print('ratio', ratio)
-              min_advantage = tf.where(
-                      advantage_buffer > 0,
-                      (1 + self.clipping_ratio) * advantage_buffer,
-                      (1 - self.clipping_ratio) * advantage_buffer,
-              )
-              print('min advantage', min_advantage)
+              #min_advantage = tf.where(
+              #        advantage_buffer > 0,
+              #        (1 + self.clipping_ratio) * advantage_buffer,
+              #        (1 - self.clipping_ratio) * advantage_buffer,
+              #)
+              #print('min advantage', min_advantage)
               print('advantage_buffer', advantage_buffer)
-              loss = -tf.reduce_mean(tf.minimum(ratio * advantage_buffer, min_advantage))
+              p_loss1 = ratio * advantage_buffer
+              print('p_loss1= ratio * advantage_buffer', p_loss1)
+              p_loss2 = tf.clip_by_value(ratio, 1 - self.clipping_ratio, 1 + self.clipping_ratio)*advantage_buffer
+              print('p_loss2= clipbyvalue * advantage_buffer', p_loss2)
+              loss = -tf.reduce_mean(tf.minimum(p_loss1, p_loss2))
  
 
         # Run backpropagation to minimize the loss using the tape.gradient method
