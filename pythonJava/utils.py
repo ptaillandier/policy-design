@@ -8,13 +8,17 @@ import matplotlib.pyplot as plt
 class Episode:
     def __init__(self):
         self.clear()
-
+       
+    # Set id for the episode
+    def set_id(self, episode_id):
+        self.id = episode_id
     # Resets/restarts the episode memory buffer
     def clear(self):
         self.observations = []
         self.actions = []
         self.rewards = []
         self.bounds = []
+        self.id = -1
     # Add observations, actions, rewards to memory
     def add_experience(self, new_observation, new_action, new_reward, bound=None):
         self.observations.append(new_observation)
