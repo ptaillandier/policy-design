@@ -94,7 +94,7 @@ class ActorTraining:
             rewards: rewards
         """
         with tf.GradientTape() as tape:
-              step_neglogprobability = compute_joint_neglogprob(self.model, actions, observations)
+              step_neglogprobability = ActorTraining.compute_joint_neglogprob(self.model, actions, observations)
               ratio = tf.exp(-step_neglogprobability + neglogprobability_buffer)
               print('ratio', ratio)
               min_advantage = tf.where(
@@ -105,11 +105,16 @@ class ActorTraining:
               print('min advantage', min_advantage)
               print('advantage_buffer', advantage_buffer)
               loss = -tf.reduce_mean(tf.minimum(ratio * advantage_buffer, min_advantage))
-              
-              # Call the compute_loss function to compute the loss
-              loss = ActorTraining.compute_loss(logprobability_buffer, actions, advantage_buffer)
+ 
 
         # Run backpropagation to minimize the loss using the tape.gradient method
         grads = tape.gradient(loss, self.model.trainable_variables)
         #print('grads', grads)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        kl = tf.reduce_mean(
+            -neglogprobability_buffer
+            + ActorTraining.compute_joint_neglogprob(self.model, actions, observations)
+        )
+        kl = tf.reduce_sum(kl)
+        return kl #Return KL divergence
+

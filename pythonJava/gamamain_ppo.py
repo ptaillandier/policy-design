@@ -6,6 +6,7 @@ import os
 import gamainteraction
 from policy2 import Policy
 from actor_training import ActorTraining
+from critic_training import CriticTraining
 import numpy as np
 from typing import List, TextIO, IO
 import argparse
@@ -54,11 +55,11 @@ layers_sizes = args.sizes
 ### Start configuration specific ppo variables ###
 clipping_ratio = 0.2
 policy_learning_rate = 3e-3
-value_function_learning_rate = 1e-4
+critic_learning_rate = 1e-4
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
 gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
 train_policy_iterations = 80 #Maximum number of gradient descent steps to take on policy loss per epoch (aka training iteration). Early stopping may cause optimizer to take fewer than this
-train_value_iterations = 80 #Number of gradient descent steps to take on value function per epoch (aka training iteration)
+train_critic_iterations = 80 #Number of gradient descent steps to take on value function per epoch (aka training iteration)
 ### End configuration specific ppo variables ###
 
 n_episodes = max_training_iters*batch_size #The total number of episodes explored will be the number of iterations for the training par the size of batch examples processed on each training
@@ -152,11 +153,18 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     print('\t','simulation time', time_simulation)
     return episode
 
-def train_model(_model: Sequential, _batch_episodes: List[utils.Episode], _batch_deltas: List[float],  _clipping_ratio:float, _target_kl:float, _train_policy_iterations:int):
+def train_actor_model(_model: Sequential, _batch_episodes: List[utils.Episode], _batch_deltas: List[float],  _clipping_ratio:float, _target_kl:float, _train_policy_iterations:int, _policy_learning_rate:float):
     # Create a training based on model with the desired parameters.
-    tr = ActorTraining(_model, clipping_ratio=_clipping_ratio, target_kl=_target_kl)
+    policy_optimizer = tf.keras.optimizers.Adam(learning_rate=_policy_learning_rate)
+    tr = ActorTraining(_model, optimizer= policy_optimizer, clipping_ratio=_clipping_ratio, target_kl=_target_kl)
     tr.train(_batch_episodes, _batch_deltas, _train_policy_iterations)
 
+
+def train_critic_model(_model: Sequential, _batch_episodes: List[utils.Episode],  _discount_factor:float,_train_critic_iterations:int, _critic_learning_rate:float):
+    critic_optimizer = tf.keras.optimizers.Adam(learning_rate=_critic_learning_rate)
+    # Create a training based on model with the desired parameters.
+    tr = CriticTraining(_model, optimizer=critic_optimizer, discount_factor=_discount_factor)
+    tr.train(_batch_episodes, _train_critic_iterations)
 
 
 
@@ -186,9 +194,7 @@ if __name__ == "__main__":
     print('actor_model.summary()', actor_model.summary())
     critic_model = utils.mlp(n_observations, np.append(layers_sizes[:-1],  1))
     print('critic_model.summary()', critic_model.summary())
-    # Initialize the policy and the value function optimizers
-    policy_optimizer = tf.keras.optimizers.Adam(learning_rate=policy_learning_rate)
-    value_optimizer = tf.keras.optimizers.Adam(learning_rate=value_function_learning_rate)
+    
 
     batch_episodes = []
     batch_deltas = []
@@ -248,7 +254,8 @@ if __name__ == "__main__":
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
-        train_model(actor_model, batch_episodes, batch_deltas, clipping_ratio, target_kl, train_policy_iterations)
+        train_actor_model(actor_model, batch_episodes, batch_deltas, clipping_ratio, target_kl, train_policy_iterations, policy_learning_rate)
+        train_critic_model(critic_model, batch_episodes, discount_factor, train_critic_iterations, critic_learning_rate)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)       
