@@ -130,8 +130,8 @@ class Dirichlet():
         self.epsilon = 1e-7
         #Some components of the samples can be zero due to finite precision. This happens more often when some of the concentrations are very small. Make sure to round the samples to np.finfo(dtype).tiny before computing the density.
         inputs = tf.clip_by_value(inputs, log(SMALL_NUMBER), -log(SMALL_NUMBER))
-        concentration = tf.exp(inputs) + self.epsilon
-        self.dist = tfp.distributions.Dirichlet(concentration=concentration, validate_args=True, allow_nan_stats=False)  
+        self.concentration = tf.exp(inputs) + self.epsilon
+        self.dist = tfp.distributions.Dirichlet(concentration=self.concentration, validate_args=True, allow_nan_stats=False)  
 
     def log_prob(self, x):
         # Support of Dirichlet are positive real numbers. x is already
@@ -147,3 +147,5 @@ class Dirichlet():
     def prob(self, x):
         return tf.exp(self.log_prob(x))
 
+    def get_concentration(self):
+        return self.concentration.numpy()

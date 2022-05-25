@@ -62,23 +62,23 @@ class Training:
               distributions_params = self.model(observations)
               logcon, mus, logsigmas = tf.split(distributions_params, [4, 3, 3], axis=1)
               actions_budget, actions_theta = np.array_split(actions, [4], axis=1)
-              print('logcon', logcon)
+              #print('logcon', logcon)
               #We create the dirichlet distribution with the logcon
               dirichlet_distribution = action_distributions.Dirichlet(logcon)
-              print('actions_budget', actions_budget)
+              #print('actions_budget', actions_budget)
               neglogprobbudget = -1*dirichlet_distribution.log_prob(actions_budget)
-              print('neglogprobbudget', neglogprobbudget)
+              #print('neglogprobbudget', neglogprobbudget)
               max_std = 0.3
               min_std = 0.005
               logsigmas = tf.sigmoid(logsigmas)*max_std + min_std
               mus = tf.sigmoid(mus)
-              print('mus', mus)
-              print('logsigmas', logsigmas)
+              #print('mus', mus)
+              #print('logsigmas', logsigmas)
               SMALL_NUMBER = 1e-5
               theta_distributions = action_distributions.SquashedGaussian(mus, logsigmas, low=0.0-SMALL_NUMBER, high=1.0+SMALL_NUMBER)
-              print('actions_theta', actions_theta)
+              #print('actions_theta', actions_theta)
               neglogprobthetas = -1*theta_distributions.log_prob(actions_theta)
-              print('neglogprobthetas', neglogprobthetas)
+              #print('neglogprobthetas', neglogprobthetas)
               #distributions = tfp.distributions.TruncatedNormal(tf.multiply(tf.sigmoid(mus), bounds), tf.sigmoid(logsigmas)*max_std + min_std, low=[0], high=bounds)
               # Call the compute_loss function to compute the loss
               loss = Training.compute_loss(neglogprobbudget+neglogprobthetas, actions, discounted_rewards)
@@ -101,9 +101,9 @@ class Training:
     #@staticmethod
     #@tf.function
     def compute_loss(neglogprob, actions, rewards):
-        print('prob of joint actions', tf.exp(-neglogprob))
-        print('neglogprob of joint actions', neglogprob)
-        print('rewards', rewards)
+        #print('prob of joint actions', tf.exp(-neglogprob))
+        #print('neglogprob of joint actions', neglogprob)
+        #print('rewards', rewards)
         # Compute the negative log probabilities
         #neg_logprob = -1*distributions.log_prob(actions)
         #neg_logprob = tf.reduce_sum(neg_logprob, axis=1)

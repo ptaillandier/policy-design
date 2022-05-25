@@ -80,8 +80,8 @@ def action_to_string(actions: npt.NDArray[np.float64]) -> str:
 # Takes the observations from the simulation, sent as a string
 # Computes the appropriate policy and returns it
 def process_observations(policy_manager: Policy, observations: npt.NDArray[np.float64], n_actions: int):
-    action, processed_observations, bounds = policy_manager.choose_action(observations, n_actions)
-    return action, bounds
+    action, processed_observations, bounds, nn_outputs = policy_manager.choose_action(observations, n_actions)
+    return action, bounds, nn_outputs
 
 
 # Takes the reward returned after applying the policy given the observations and update the model accordingly

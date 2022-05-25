@@ -4,8 +4,8 @@ import sys
 from keras import Sequential
 import os
 import gamainteraction
-from policy2 import Policy
-from training2 import Training
+from policy_dirichlet import Policy
+from training_dirichlet import Training
 import numpy as np
 from typing import List, TextIO, IO
 import argparse
@@ -83,6 +83,7 @@ MODELPATH                   = 'nngamma' # Path to the file where to store the ne
 results_filepath            = 'results_sum_rewards.csv'
 results2_filepath           = 'results_number_adopters.csv'
 results3_filepath           = 'results_actions.csv'
+results4_filepath           = 'results_nnoutputs.csv'
 
 
 # The loop of interaction between the gama simulation and the model
@@ -114,8 +115,11 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
             
            # we then compute a policy and send it back to gama
            tic_b = time.time()
-           action, action_env = gamainteraction.process_observations(policy_manager, obs, n_actions)
+           action, action_env, nn_outputs = gamainteraction.process_observations(policy_manager, obs, n_actions)
            time_updating_policy = time_updating_policy + time.time() - tic_b
+           #store in the result file the outputs of the nn 
+           with open(results4_filepath, 'a') as f:
+               f.write(str(episode.id)+','+str(i_experience)+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output) for output in nn_outputs])+'\n')
 
            str_action = gamainteraction.action_to_string(np.array(action_env))
            #store in the result file the actions taken
@@ -189,7 +193,15 @@ if __name__ == "__main__":
     with open(results3_filepath, 'a') as f:
           f.write('iteration, decision step, thetaeconomy, thetamanagement, fmanagement, thetaenviron, fenviron\n')
 
-    
+    #Check that the result3 file for evaluation does not exist
+    try:
+      os.remove(results4_filepath)
+    except OSError:
+          pass
+    #First line contains the title
+    with open(results4_filepath, 'a') as f:
+          f.write('iteration, decision step, budget_obs, fadopters_obs, ceco, cman, cenv, cleft, mean_thetaeco, mean_thetaman, mean_thetaenv, std_thetaeco, std_thetaman, std_thetaenv\n')
+
     model = utils.mlp(n_observations, layers_sizes)
     print('model.summary()', model.summary())
     print('max_training_iters', max_training_iters)
@@ -242,4 +254,6 @@ if __name__ == "__main__":
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)
-        i_episode = i_episode + 1       
+        i_episode = i_episode + 1
+    #Store model to reuse to pursue learning       
+    model.save(MODELPATH, include_optimizer=False)
