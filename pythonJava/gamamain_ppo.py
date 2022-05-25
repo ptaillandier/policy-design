@@ -58,11 +58,12 @@ layers_sizes = args.sizes
 ### End configuration variables ###
 ### Start configuration specific ppo variables ###
 clipping_ratio = 0.2
-policy_learning_rate = 3e-3
-critic_learning_rate = 1e-4
+policy_learning_rate = 1e-7
+critic_learning_rate = 1e-7
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
 gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
-train_policy_iterations = 80 #Maximum number of gradient descent steps to take on policy loss per epoch (aka training iteration). Early stopping may cause optimizer to take fewer than this. In others implementation is called update_epochs (i.e. number of epochs to update the policy and default set to 10) and it is the same number for policy and critic
+n_update_epochs = 10 #Number of epochs to update the policy (default set to 10,30) and it is the same number for policy and critic
+n_mini_batches = 100 #Number of training minibatches par update/epoch (default set to 32-128)
 train_critic_iterations = 80 #Number of gradient descent steps to take on value function per epoch (aka training iteration)
 ### End configuration specific ppo variables ###
 ## From others implementation
