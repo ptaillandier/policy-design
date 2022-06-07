@@ -5,8 +5,7 @@ from keras import Sequential
 import os
 import gamainteraction
 from policy_dirichlet import Policy
-from actor_training import ActorTraining
-from critic_training import CriticTraining
+from ppo_training import PPOTraining
 import numpy as np
 from typing import List, TextIO, IO
 import argparse
@@ -21,7 +20,7 @@ session = tf.compat.v1.Session(config=config)
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
-    "--iters",
+    "--num-iters",
     type=int,
     default=3,
     help="Number of iterations.",
@@ -30,8 +29,15 @@ parser.add_argument(
 parser.add_argument(
     "--num-batch-episodes",
     type=int,
-    default=1,
+    default=200,
     help="Number of episodes par batch",
+)
+
+parser.add_argument(
+    "--num-mini-batches",
+    type=int,
+    default=100,
+    help="Number of training minibatches par update/epoch. Default to 100",
 )
 
 parser.add_argument(
@@ -51,7 +57,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 ### Start configuration variables ###
-max_training_iters = args.iters # Number of training iterations (times that we run training)
+max_training_iters = args.num_iters # Number of training iterations (times that we run training)
 batch_size = args.num_batch_episodes
 discount_factor = args.discount_factor
 layers_sizes = args.sizes 
@@ -63,7 +69,7 @@ critic_learning_rate = 1e-7
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
 gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
 n_update_epochs = 10 #Number of epochs to update the policy (default set to 10,30) and it is the same number for policy and critic
-n_mini_batches = 100 #Number of training minibatches par update/epoch (default set to 32-128)
+n_mini_batches = args.num_mini_batches #Number of training minibatches par update/epoch (default set to 32-128)
 train_critic_iterations = 80 #Number of gradient descent steps to take on value function per epoch (aka training iteration)
 ### End configuration specific ppo variables ###
 ## From others implementation
@@ -175,11 +181,11 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     print('\t','simulation time', time_simulation)
     return episode
 
-def train_actor_model(_model: Sequential, _batch_episodes: List[utils.Episode], _batch_deltas: List[float],  _clipping_ratio:float, _target_kl:float, _train_policy_iterations:int, _policy_learning_rate:float):
+def train_actor_model(_model: Sequential, _batch_episodes: List[utils.Episode], _batch_deltas: List[float],  _clipping_ratio:float, _target_kl:float, _n_update_epochs:int, _n_mini_batches:int, _policy_learning_rate:float):
     # Create a training based on model with the desired parameters.
     policy_optimizer = tf.keras.optimizers.Adam(learning_rate=_policy_learning_rate)
     tr = ActorTraining(_model, optimizer= policy_optimizer, clipping_ratio=_clipping_ratio, target_kl=_target_kl)
-    tr.train(_batch_episodes, _batch_deltas, _train_policy_iterations)
+    tr.train(_batch_episodes, _batch_deltas, _n_update_epochs, _n_mini_batches)
 
 
 def train_critic_model(_model: Sequential, _batch_episodes: List[utils.Episode],  _discount_factor:float,_train_critic_iterations:int, _critic_learning_rate:float):
@@ -294,8 +300,10 @@ if __name__ == "__main__":
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
-        train_actor_model(actor_model, batch_episodes, batch_deltas, clipping_ratio, target_kl, train_policy_iterations, policy_learning_rate)
-        train_critic_model(critic_model, batch_episodes, discount_factor, train_critic_iterations, critic_learning_rate)
+        # Create a training based on model with the desired parameters.
+        policy_optimizer = tf.keras.optimizers.Adam(learning_rate=policy_learning_rate)
+        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor)
+        tr.train(batch_episodes, batch_deltas, n_update_epochs, n_mini_batches)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)   

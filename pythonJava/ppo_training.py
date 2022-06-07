@@ -4,7 +4,7 @@ import tensorflow_probability as tfp
 import numpy as np
 import action_distributions
 
-class ActorTraining:
+class PPOTraining:
     """Class that encodes the deep reinforcement learning training logic.
 
     Longer class information....
@@ -16,7 +16,7 @@ class ActorTraining:
         discount_factor: discount factor hyperparameter for the deep reinforcement learning rewards
     """
     
-    def __init__(self, model, optimizer=tf.keras.optimizers.Adam(1e-3), clipping_ratio=0.3, target_kl = 0.01):
+    def __init__(self, actor_model, critic_model, actor_optimizer=tf.keras.optimizers.Adam(1e-3), critic_optimizer=tf.keras.optimizers.Adam(1e-3), clipping_ratio=0.3, target_kl = 0.01, discount_factor=0.95):
         """Constructor.
 
         Args:
@@ -24,10 +24,13 @@ class ActorTraining:
            optimizer: keras optimizer
            gamma: discounting factor
         """
-        self.model = model
-        self.optimizer = optimizer
+        self.actor_model = actor_model
+        self.critic_model = critic_model
+        self.actor_optimizer = actor_optimizer
+        self.critic_optimizer = critic_optimizer
         self.clipping_ratio = clipping_ratio
         self.target_kl = target_kl
+        self.discount_factor = discount_factor
 
     def train(self, episodes, batch_deltas, n_update_epochs, n_mini_batches):
         """Training step function (forward and backpropagation).
@@ -41,13 +44,15 @@ class ActorTraining:
         observations = []
 
         for episode in episodes:
+             discounted_rewards.append(utils.discount_rewards(episode.rewards, self.discount_factor))
              actions.append(episode.actions)
              observations.append(episode.observations)
 
         observations = np.vstack(observations)
         actions = np.concatenate(actions)
+        discounted_rewards = np.concatenate(discounted_rewards)
         #Compute joint neglogprobabilities
-        joint_neg_logprob = ActorTraining.compute_joint_neglogprob(self.model, actions, observations)
+        joint_neg_logprob = PPOTraining.compute_joint_neglogprob(self.actor_model, actions, observations)
         #print('prob of joint actions', tf.exp(-joint_neg_logprob))
         #print('neglogprob of joint actions', joint_neg_logprob)
         # Compute index of each element of each mini_batch
@@ -77,8 +82,9 @@ class ActorTraining:
                  mbadvantage_std = np.std(minibatch_advantages) + 1e-8
                  minibatch_advantages = tf.truediv(tf.subtract(minibatch_advantages, mbadvantage_mean), mbadvantage_std)
                  minibatch_joint_neg_logprob = tf.gather(joint_neg_logprob, mbinds)
-                 kl = self.train_step( minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_joint_neg_logprob)
-            
+                 kl = self.actor_train_step( minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_joint_neg_logprob)
+                 minibatch_discounted_rewards = discounted_rewards[mbinds]
+                 self.critic_train_step( minibatch_observations, minibatch_discounted_rewards)      
                  print('update epoch: ', tpi,'minibatch ', start, ' kl:', kl)
                  if kl > 1.5 * self.target_kl:
                      print('Early stopping at epoch '+ tpi)
@@ -108,8 +114,17 @@ class ActorTraining:
         #print('neglogprobthetas', neglogprobthetas)
         return neglogprobbudget+neglogprobthetas
 
+
+    def critic_train_step(self, observations, discounted_rewards):
+
+        with tf.GradientTape() as tape:  # Record operations for automatic differentiation.
+               loss = tf.reduce_mean((discounted_rewards - self.critic_model(observations)) ** 2)
+        # Run backpropagation to minimize the loss using the tape.gradient method
+        grads = tape.gradient(loss, self.critic_model.trainable_variables)
+        self.critic_optimizer.apply_gradients(zip(grads, self.critic_model.trainable_variables))
+
     #@tf.function 
-    def train_step(self, observations, actions, advantage_buffer, neglogprobability_buffer):
+    def actor_train_step(self, observations, actions, advantage_buffer, neglogprobability_buffer):
         """Training step function (forward and backpropagation).
 
         Args:
@@ -118,7 +133,7 @@ class ActorTraining:
             rewards: rewards
         """
         with tf.GradientTape() as tape:
-              step_neglogprobability = ActorTraining.compute_joint_neglogprob(self.model, actions, observations)
+              step_neglogprobability = PPOTraining.compute_joint_neglogprob(self.actor_model, actions, observations)
               ratio = tf.exp(-step_neglogprobability + neglogprobability_buffer)
               #print('ratio', ratio)
               #min_advantage = tf.where(
@@ -136,12 +151,12 @@ class ActorTraining:
  
 
         # Run backpropagation to minimize the loss using the tape.gradient method
-        grads = tape.gradient(loss, self.model.trainable_variables)
+        grads = tape.gradient(loss, self.actor_model.trainable_variables)
         #print('grads', grads)
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        self.actor_optimizer.apply_gradients(zip(grads, self.actor_model.trainable_variables))
         kl = tf.reduce_mean(
             -neglogprobability_buffer
-            + ActorTraining.compute_joint_neglogprob(self.model, actions, observations)
+            + PPOTraining.compute_joint_neglogprob(self.actor_model, actions, observations)
         )
         kl = tf.reduce_sum(kl)
         return kl #Return KL divergence
