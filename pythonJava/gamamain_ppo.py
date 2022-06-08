@@ -34,10 +34,17 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--num-update-epochs",
+    type=int,
+    default=10,
+    help="Number of training epochs per update",
+)
+
+parser.add_argument(
     "--num-mini-batches",
     type=int,
     default=100,
-    help="Number of training minibatches par update/epoch. Default to 100",
+    help="Number of training minibatches per update/epoch. Default to 100",
 )
 
 parser.add_argument(
@@ -68,9 +75,8 @@ policy_learning_rate = 1e-7
 critic_learning_rate = 1e-7
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
 gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
-n_update_epochs = 10 #Number of epochs to update the policy (default set to 10,30) and it is the same number for policy and critic
+n_update_epochs = args.num_update_epochs #Number of epochs to update the policy (default set to 10,30) and it is the same number for actor and critic policy
 n_mini_batches = args.num_mini_batches #Number of training minibatches par update/epoch (default set to 32-128)
-train_critic_iterations = 80 #Number of gradient descent steps to take on value function per epoch (aka training iteration)
 ### End configuration specific ppo variables ###
 ## From others implementation
 #args.batch_size = int(args.num_envs * args.num_steps)
