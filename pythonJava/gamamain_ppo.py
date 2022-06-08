@@ -55,6 +55,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--activation",
+    type=str,
+    default="tanh",
+    help="Activation function descriptor for hidden layers. Supported values are: tanh or relu",
+)
+
+parser.add_argument(
     "--sizes",
     type=int,
     nargs = "+",
@@ -68,6 +75,12 @@ max_training_iters = args.num_iters # Number of training iterations (times that 
 batch_size = args.num_batch_episodes
 discount_factor = args.discount_factor
 layers_sizes = args.sizes 
+activation_function = tf.tanh
+if args.activation == "relu":
+    activation_function = "relu"
+elif args.activation == "tanh":
+    activation_fuction = tf.tanh
+
 ### End configuration variables ###
 ### Start configuration specific ppo variables ###
 clipping_ratio = 0.2
@@ -238,12 +251,13 @@ if __name__ == "__main__":
     #First line contains the title
     with open(results4_filepath, 'a') as f:
           f.write('iteration, decision step, budget_obs, fadopters_obs, ceco, cman, cenv, cleft, mean_thetaeco, mean_thetaman, mean_thetaenv, std_thetaeco, std_thetaman, std_thetaenv\n')
-
     
-    actor_model = utils.mlp(n_observations, layers_sizes)
-    print('actor_model.summary()', actor_model.summary())
-    critic_model = utils.mlp(n_observations, np.append(layers_sizes[:-1],  1))
-    print('critic_model.summary()', critic_model.summary())
+    actor_model = utils.mlp(n_observations, layers_sizes, activation = activation_function)
+    print('actor_model.summary()')
+    utils.full_summary(actor_model)
+    critic_model = utils.mlp(n_observations, np.append(layers_sizes[:-1],  1), activation = activation_function)
+    print('critic_model.summary()')
+    utils.full_summary(critic_model)
     
 
     batch_episodes = []

@@ -67,6 +67,18 @@ def mlp(n_observations, sizes, activation='relu', output_activation=None):
     model.add(tf.keras.layers.Dense(units=sizes[-1], activation=output_activation))
     return model
 
+# Prints full summary of a mlp model, including activation function
+def full_summary(layer):
+    print('summary for ' + layer.name)
+    #check if this layer has activation function
+    if hasattr(layer, 'activation'):
+        print('layer.activation ', layer.activation)
+    #check if this layer has layers
+    if hasattr(layer, 'layers'):
+        layer.summary()
+        for l in layer.layers:
+            full_summary(l)
+
 #Plot distribution
 def plot_distribution(probs, filepath):
       xstep=1.0/(len(probs)-1)
