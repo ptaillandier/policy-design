@@ -36,7 +36,7 @@ parser.add_argument(
 parser.add_argument(
     "--num-update-epochs",
     type=int,
-    default=10,
+    default=30,
     help="Number of training epochs per update",
 )
 
@@ -199,19 +199,6 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     print('\t','updating policy time', time_updating_policy)
     print('\t','simulation time', time_simulation)
     return episode
-
-def train_actor_model(_model: Sequential, _batch_episodes: List[utils.Episode], _batch_deltas: List[float],  _clipping_ratio:float, _target_kl:float, _n_update_epochs:int, _n_mini_batches:int, _policy_learning_rate:float):
-    # Create a training based on model with the desired parameters.
-    policy_optimizer = tf.keras.optimizers.Adam(learning_rate=_policy_learning_rate)
-    tr = ActorTraining(_model, optimizer= policy_optimizer, clipping_ratio=_clipping_ratio, target_kl=_target_kl)
-    tr.train(_batch_episodes, _batch_deltas, _n_update_epochs, _n_mini_batches)
-
-
-def train_critic_model(_model: Sequential, _batch_episodes: List[utils.Episode],  _discount_factor:float,_train_critic_iterations:int, _critic_learning_rate:float):
-    critic_optimizer = tf.keras.optimizers.Adam(learning_rate=_critic_learning_rate)
-    # Create a training based on model with the desired parameters.
-    tr = CriticTraining(_model, optimizer=critic_optimizer, discount_factor=_discount_factor)
-    tr.train(_batch_episodes, _train_critic_iterations)
 
 
 

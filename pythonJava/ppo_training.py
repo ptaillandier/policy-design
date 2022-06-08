@@ -87,7 +87,7 @@ class PPOTraining:
                  self.critic_train_step( minibatch_observations, minibatch_discounted_rewards)      
                  print('update epoch: ', tpi,'minibatch ', start, ' kl:', kl)
                  if kl > 1.5 * self.target_kl:
-                     print('Early stopping at epoch '+ tpi)
+                     print('Early stopping at epoch ', tpi)
                      # Early stopping
                      break
 
