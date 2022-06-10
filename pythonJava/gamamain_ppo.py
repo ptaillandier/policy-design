@@ -306,10 +306,10 @@ if __name__ == "__main__":
                 f.write(str(sum_episode_rewards)+'\n')
             # Save the number of adopters end of each episode for statistics
             with open(results2_filepath, 'a') as f:
-                f.write(str(episode.last_observation[0])+'\n')
+                f.write(str(episode.last_observation[1])+'\n')
             print('episode.observations[-2][0]', episode.observations[-2][0])
             print('episode.observations[-1][0]', episode.observations[-1][0])
-            print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.last_observation[0]), 'remaining_budget', episode.last_observation[1], '\n')
+            print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.last_observation[1]), 'remaining_budget', episode.last_observation[0], '\n')
             i_batch_episode = i_batch_episode + 1
 
         tic_b = time.time()
