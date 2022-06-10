@@ -244,7 +244,9 @@ species institution skills:[tcp] {
 	}
 
 	action send_end {
-		let sent 	<- send(server, "END\n");
+	        //budget restant, nb d'adoptant/taux, temps restant
+		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
+		let sent 	<- send(server, observations+"END\n");
 		if (! sent) {
 			write "impossible d'envoyer le message de fin de simulation à : " + server;
 		}

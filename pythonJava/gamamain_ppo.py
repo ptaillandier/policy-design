@@ -138,22 +138,26 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     gama_socket_as_file: TextIO[IO[str]] = gama_simulation.makefile(mode='rw')
 
     try:
-        n_times_4_action = 9 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
+        n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
         time_updating_policy = 0
         time_simulation = 0
         i_experience = 0
+        last_obs = -1
         while True:
            # we wait for the simulation to send the observations
            #print("waiting for observations")
            tic_b = time.time()
            received_observations: str = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time()-tic_b
-           if received_observations == "END\n":
-               #print("simulation has ended")
+           if "END\n" in received_observations:
+               print("simulation has ended")
+               last_obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
+               last_obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
+               episode.set_last_observation(last_obs)
                break
 
            print("model received:", received_observations)
-           obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
+           obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations)
            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
             
            # we then compute a policy and send it back to gama
@@ -198,6 +202,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
       
     print('\t','updating policy time', time_updating_policy)
     print('\t','simulation time', time_simulation)
+    
     return episode
 
 
@@ -277,19 +282,21 @@ if __name__ == "__main__":
                                                  run_headless_script_path) == 2:
                 print("simulation " + str(i_episode) + " ended in error, stopping everything")
                 sys.exit(-1)
-            batch_episodes.append(episode)
+            
             #
             # 1. Compute discounted deltas for this episode
             #
             # 1.1 Compute the values for observations present in the episode
-            episode_values = critic_model(np.vstack(episode.observations))
+            episode_values = np.squeeze(critic_model(np.vstack(episode.observations)))
             episode_values = np.append(episode_values, 0)
             # 1.2 Compute discounted deltas for this episode
             episode_deltas = utils.discount_rewards(episode.rewards + discount_factor*episode_values[1:] - episode_values[:-1], discount_factor * gae_lambda)
             episode_deltas = episode_deltas.astype('float32')
             # 1.3 Store deltas to the batch
             batch_deltas.append(episode_deltas)
-
+            
+            # Add episode to the batch of episodes
+            batch_episodes.append(episode)
                     
         i_batch_episode = 0
         for episode in batch_episodes:
@@ -299,10 +306,10 @@ if __name__ == "__main__":
                 f.write(str(sum_episode_rewards)+'\n')
             # Save the number of adopters end of each episode for statistics
             with open(results2_filepath, 'a') as f:
-                f.write(str(episode.observations[-1][1])+'\n')
+                f.write(str(episode.last_observation[0])+'\n')
             print('episode.observations[-2][0]', episode.observations[-2][0])
             print('episode.observations[-1][0]', episode.observations[-1][0])
-            print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.observations[-1][1]), '\n')
+            print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.last_observation[0]), 'remaining_budget', episode.last_observation[1], '\n')
             i_batch_episode = i_batch_episode + 1
 
         tic_b = time.time()

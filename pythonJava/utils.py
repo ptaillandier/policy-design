@@ -12,6 +12,11 @@ class Episode:
     # Set id for the episode
     def set_id(self, episode_id):
         self.id = episode_id
+
+    # Set last observation of the episode
+    def set_last_observation(self, last_observation):
+        self.last_observation = last_observation
+
     # Resets/restarts the episode memory buffer
     def clear(self):
         self.observations = []
@@ -19,6 +24,7 @@ class Episode:
         self.rewards = []
         self.bounds = []
         self.id = -1
+        self.last_observation = -1
     # Add observations, actions, rewards to memory
     def add_experience(self, new_observation, new_action, new_reward, bound=None):
         self.observations.append(new_observation)
@@ -26,6 +32,8 @@ class Episode:
         self.rewards.append(new_reward)
         if bound is not None:
             self.bounds.append(bound)
+
+
 
 
 # Compute discounted, cumulative rewards per time step (e.g. the rewards-to-go)
