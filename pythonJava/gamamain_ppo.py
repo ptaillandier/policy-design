@@ -62,6 +62,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--minibatch-splitting",
+    type=str,
+    default="SHUFFLE_TRANSITIONS",
+    help="The way the data is split into mini-batches. Supported values are: FIXED_TRAJECTORIES, SHUFFLE_TRAJECTORIES, SHUFFLE_TRANSITIONS (default), SHUFFLE_TRANSITIONS_RECOMPUTE_ADVANTAGES",
+)
+
+
+parser.add_argument(
     "--sizes",
     type=int,
     nargs = "+",
@@ -90,6 +98,7 @@ target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new
 gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
 n_update_epochs = args.num_update_epochs #Number of epochs to update the policy (default set to 10,30) and it is the same number for actor and critic policy
 n_mini_batches = args.num_mini_batches #Number of training minibatches par update/epoch (default set to 32-128)
+minibatch_splitting_method = args.minibatch_splitting
 ### End configuration specific ppo variables ###
 ## From others implementation
 #args.batch_size = int(args.num_envs * args.num_steps)
@@ -316,7 +325,7 @@ if __name__ == "__main__":
         print('discount_factor', discount_factor)
         # Create a training based on model with the desired parameters.
         policy_optimizer = tf.keras.optimizers.Adam(learning_rate=policy_learning_rate)
-        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor)
+        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor, minibatch_splitting_method=minibatch_splitting_method)
         tr.train(batch_episodes, batch_deltas, n_update_epochs, n_mini_batches)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)

@@ -16,7 +16,7 @@ class PPOTraining:
         discount_factor: discount factor hyperparameter for the deep reinforcement learning rewards
     """
     
-    def __init__(self, actor_model, critic_model, actor_optimizer=tf.keras.optimizers.Adam(1e-3), critic_optimizer=tf.keras.optimizers.Adam(1e-3), clipping_ratio=0.3, target_kl = 0.01, discount_factor=0.95):
+    def __init__(self, actor_model, critic_model, actor_optimizer=tf.keras.optimizers.Adam(1e-3), critic_optimizer=tf.keras.optimizers.Adam(1e-3), clipping_ratio=0.3, target_kl = 0.01, discount_factor=0.95, minibatch_splitting_method="SHUFFLE_TRANSITIONS"):
         """Constructor.
 
         Args:
@@ -31,6 +31,8 @@ class PPOTraining:
         self.clipping_ratio = clipping_ratio
         self.target_kl = target_kl
         self.discount_factor = discount_factor
+        self.minibatch_splitting_method = minibatch_splitting_method
+        print('self.minibatch_splitting_method ', self.minibatch_splitting_method)
 
     def train(self, episodes, batch_deltas, n_update_epochs, n_mini_batches):
         """Training step function (forward and backpropagation).
@@ -66,8 +68,10 @@ class PPOTraining:
 
         #Update the policy and implement early stopping using KL divergence
         for tpi in range(n_update_epochs):
-            # Randomize the indexes of the mini_batch for this epoch
-            #np.random.shuffle(inds)
+            # Randomize the indexes of the mini_batch for this epoch if SHUFFLE_TRANSITIONS
+            if self.minibatch_splitting_method == "SHUFFLE_TRANSITIONS":
+                print("SHUFFLing TRANSITIONS")
+                np.random.shuffle(inds)
             # 0 to batch_size with batch_train_size step
             for start in range(0, batch_size, mini_batch_size):
                  end = start + mini_batch_size
