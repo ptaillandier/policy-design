@@ -95,7 +95,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     gama_socket_as_file: TextIO[IO[str]] = gama_simulation.makefile(mode='rw')
 
     try:
-        n_times_4_action = 9 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
+        n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
         time_updating_policy = 0
         time_simulation = 0
         i_experience = 0
@@ -105,12 +105,16 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            tic_b = time.time()
            received_observations: str = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time()-tic_b
-           if received_observations == "END\n":
-               #print("simulation has ended")
+           if "END\n" in received_observations:
+               last_obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
+               last_obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
+               episode.set_last_observation(last_obs)
                break
 
+          
+
            print("model received:", received_observations)
-           obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
+           obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations)
            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
             
            # we then compute a policy and send it back to gama
@@ -242,10 +246,10 @@ if __name__ == "__main__":
                 f.write(str(sum_episode_rewards)+'\n')
             # Save the number of adopters end of each episode for statistics
             with open(results2_filepath, 'a') as f:
-                f.write(str(episode.observations[-1][1])+'\n')
+                f.write(str(episode.last_observation[1])+'\n')
             print('episode.observations[-2][0]', episode.observations[-2][0])
             print('episode.observations[-1][0]', episode.observations[-1][0])
-            print('Episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.observations[-1][1]), '\n')
+            print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.last_observation[1]), 'remaining_budget', episode.last_observation[0], '\n')
             i_batch_episode = i_batch_episode + 1
 
         tic_b = time.time()
