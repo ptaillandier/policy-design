@@ -159,7 +159,6 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            received_observations: str = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time()-tic_b
            if "END\n" in received_observations:
-               print("simulation has ended")
                last_obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
                last_obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
                episode.set_last_observation(last_obs)
