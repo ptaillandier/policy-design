@@ -16,7 +16,7 @@ class PPOTraining:
         discount_factor: discount factor hyperparameter for the deep reinforcement learning rewards
     """
     
-    def __init__(self, actor_model, critic_model, actor_optimizer=tf.keras.optimizers.Adam(1e-3), critic_optimizer=tf.keras.optimizers.Adam(1e-3), clipping_ratio=0.3, target_kl = 0.01, discount_factor=0.95, minibatch_splitting_method="SHUFFLE_TRANSITIONS"):
+    def __init__(self, actor_model, critic_model, actor_optimizer=tf.keras.optimizers.Adam(1e-3), critic_optimizer=tf.keras.optimizers.Adam(1e-3), clipping_ratio=0.3, target_kl = 0.01, discount_factor=0.99, gae_lambda=0.95, minibatch_splitting_method="SHUFFLE_TRANSITIONS"):
         """Constructor.
 
         Args:
@@ -32,26 +32,37 @@ class PPOTraining:
         self.target_kl = target_kl
         self.discount_factor = discount_factor
         self.minibatch_splitting_method = minibatch_splitting_method
+        self.gae_lambda = gae_lambda
         print('self.minibatch_splitting_method ', self.minibatch_splitting_method)
 
-    def train(self, episodes, batch_deltas, n_update_epochs, n_mini_batches):
+    def train(self, episodes, n_update_epochs, n_mini_batches):
         """Training step function (forward and backpropagation).
 
         Args:
             episodes: set of episodes
         """
-        batch_deltas = np.concatenate(batch_deltas)
         actions = []
         discounted_rewards = []
         observations = []
-
+        returns = []
+        advantages = []
         for episode in episodes:
-             discounted_rewards.append(utils.discount_rewards(episode.rewards, self.discount_factor))
-             actions.append(episode.actions)
-             observations.append(episode.observations)
+            # Compute the values for observations present in the episode
+            episode_values = np.squeeze(self.critic_model(np.vstack(episode.observations)))
+            # Compute advantages
+            episode_advantages = utils.gae(episode.rewards, np.append(episode_values,0), self.discount_factor, self.gae_lambda)
+            # Compute returns
+            returns.append(episode_advantages-episode_values)
+            advantages.append(episode_advantages)
+            # Compute disconted rewards-to-go (by now not used)
+            discounted_rewards.append(utils.discount_rewards(episode.rewards, self.discount_factor))
+            actions.append(episode.actions)
+            observations.append(episode.observations)
 
         observations = np.vstack(observations)
         actions = np.concatenate(actions)
+        returns = np.concatenate(returns)
+        advantages = np.concatenate(advantages)
         discounted_rewards = np.concatenate(discounted_rewards)
         #Compute joint neglogprobabilities
         joint_neg_logprob = PPOTraining.compute_joint_neglogprob(self.actor_model, actions, observations)
@@ -59,7 +70,7 @@ class PPOTraining:
         #print('neglogprob of joint actions', joint_neg_logprob)
         # Compute index of each element of each mini_batch
         # Create the indices array
-        batch_size = len(batch_deltas)
+        batch_size = len(advantages)
         #print('batch_size ', batch_size)
         assert batch_size % n_mini_batches == 0
         inds = np.arange(batch_size)
@@ -80,15 +91,15 @@ class PPOTraining:
                  #slices = (arr[mbinds] for arr in (obs, returns, masks, actions, values, neglogpacs))
                  minibatch_observations = observations[mbinds]
                  minibatch_actions = actions[mbinds]
-                 minibatch_advantages = batch_deltas[mbinds]
+                 minibatch_advantages = advantages[mbinds]
                  #Normalize advantages at the level of mini_batch
                  mbadvantage_mean = np.mean(minibatch_advantages)
                  mbadvantage_std = np.std(minibatch_advantages) + 1e-8
                  minibatch_advantages = tf.truediv(tf.subtract(minibatch_advantages, mbadvantage_mean), mbadvantage_std)
                  minibatch_joint_neg_logprob = tf.gather(joint_neg_logprob, mbinds)
                  kl = self.actor_train_step( minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_joint_neg_logprob)
-                 minibatch_discounted_rewards = discounted_rewards[mbinds]
-                 self.critic_train_step( minibatch_observations, minibatch_discounted_rewards)      
+                 minibatch_returns = returns[mbinds]
+                 self.critic_train_step( minibatch_observations, minibatch_returns)      
                  print('update epoch: ', tpi,'minibatch ', start, ' kl:', kl)
                  if kl > 1.5 * self.target_kl:
                      print('Early stopping at epoch ', tpi)
@@ -119,10 +130,10 @@ class PPOTraining:
         return neglogprobbudget+neglogprobthetas
 
 
-    def critic_train_step(self, observations, discounted_rewards):
+    def critic_train_step(self, observations, returns):
 
         with tf.GradientTape() as tape:  # Record operations for automatic differentiation.
-               loss = tf.reduce_mean((discounted_rewards - self.critic_model(observations)) ** 2)
+               loss = tf.reduce_mean((returns - self.critic_model(observations)) ** 2)
         # Run backpropagation to minimize the loss using the tape.gradient method
         grads = tape.gradient(loss, self.critic_model.trainable_variables)
         self.critic_optimizer.apply_gradients(zip(grads, self.critic_model.trainable_variables))

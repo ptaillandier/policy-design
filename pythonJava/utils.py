@@ -34,7 +34,11 @@ class Episode:
             self.bounds.append(bound)
 
 
-
+# Compute GAE advantages
+def gae(rewards, values, discount_factor, gae_lambda):
+    deltas = rewards + discount_factor*values[1:] - values[:-1]
+    advantages = discount_rewards(deltas, discount_factor * gae_lambda)
+    return advantages.astype('float32')
 
 # Compute discounted, cumulative rewards per time step (e.g. the rewards-to-go)
 # discounted_rewards[t] = \sum^T_{t' = t} \gamma^{t'-t}*r_t

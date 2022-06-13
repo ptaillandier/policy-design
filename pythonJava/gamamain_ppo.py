@@ -55,6 +55,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--gae-lambda",
+    type=float,
+    default=0.95,
+    help="Lambda factor for the computation of GAE",
+)
+
+parser.add_argument(
     "--activation",
     type=str,
     default="tanh",
@@ -95,7 +102,7 @@ clipping_ratio = 0.2
 policy_learning_rate = 1e-7
 critic_learning_rate = 1e-7
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
-gae_lambda = 0.97 #Lambda parameter for the Generalized Advantage Estimation (GAE) 
+gae_lambda = args.gae_lambda #Lambda parameter for the Generalized Advantage Estimation (GAE) 
 n_update_epochs = args.num_update_epochs #Number of epochs to update the policy (default set to 10,30) and it is the same number for actor and critic policy
 n_mini_batches = args.num_mini_batches #Number of training minibatches par update/epoch (default set to 32-128)
 minibatch_splitting_method = args.minibatch_splitting
@@ -261,14 +268,14 @@ if __name__ == "__main__":
     
 
     batch_episodes = []
-    batch_deltas = []
+    #batch_deltas = []
     i_episode = 0
     #For each training iteration
     for i_iter in range(max_training_iters):
         print('i_iter', i_iter)
         tic_b_iter = time.time()
         batch_episodes.clear()
-        batch_deltas.clear()
+        #batch_deltas.clear()
  
         for i_batch in range(batch_size):
             episode = utils.Episode()
@@ -295,13 +302,13 @@ if __name__ == "__main__":
             # 1. Compute discounted deltas for this episode
             #
             # 1.1 Compute the values for observations present in the episode
-            episode_values = np.squeeze(critic_model(np.vstack(episode.observations)))
-            episode_values = np.append(episode_values, 0)
+            #episode_values = np.squeeze(critic_model(np.vstack(episode.observations)))
+            #episode_values = np.append(episode_values, 0)
             # 1.2 Compute discounted deltas for this episode
-            episode_deltas = utils.discount_rewards(episode.rewards + discount_factor*episode_values[1:] - episode_values[:-1], discount_factor * gae_lambda)
-            episode_deltas = episode_deltas.astype('float32')
+            #episode_deltas = utils.discount_rewards(episode.rewards + discount_factor*episode_values[1:] - episode_values[:-1], discount_factor * gae_lambda)
+            #episode_deltas = episode_deltas.astype('float32')
             # 1.3 Store deltas to the batch
-            batch_deltas.append(episode_deltas)
+            #batch_deltas.append(episode_deltas)
             
             # Add episode to the batch of episodes
             batch_episodes.append(episode)
@@ -324,8 +331,8 @@ if __name__ == "__main__":
         print('discount_factor', discount_factor)
         # Create a training based on model with the desired parameters.
         policy_optimizer = tf.keras.optimizers.Adam(learning_rate=policy_learning_rate)
-        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor, minibatch_splitting_method=minibatch_splitting_method)
-        tr.train(batch_episodes, batch_deltas, n_update_epochs, n_mini_batches)
+        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor, gae_lambda=gae_lambda, minibatch_splitting_method=minibatch_splitting_method)
+        tr.train(batch_episodes, n_update_epochs, n_mini_batches)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)   
