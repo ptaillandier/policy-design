@@ -195,7 +195,7 @@ if __name__ == "__main__":
           pass
     #First line contains the title
     with open(results3_filepath, 'a') as f:
-          f.write('iteration, decision step, thetaeconomy, thetamanagement, fmanagement, thetaenviron, fenviron\n')
+          f.write('iteration,decision_step,thetaeconomy,thetamanagement,fmanagement,thetaenviron,fenviron\n')
 
     #Check that the result3 file for evaluation does not exist
     try:
@@ -204,7 +204,7 @@ if __name__ == "__main__":
           pass
     #First line contains the title
     with open(results4_filepath, 'a') as f:
-          f.write('iteration, decision step, budget_obs, fadopters_obs, ceco, cman, cenv, cleft, mean_thetaeco, mean_thetaman, mean_thetaenv, std_thetaeco, std_thetaman, std_thetaenv\n')
+          f.write('iteration,decision_step,budget_obs,fadopters_obs,ceco,cman,cenv,cleft,mean_thetaeco,mean_thetaman,mean_thetaenv,std_thetaeco,std_thetaman,std_thetaenv\n')
 
     model = utils.mlp(n_observations, layers_sizes)
     print('model.summary()', model.summary())
