@@ -128,7 +128,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            str_action = gamainteraction.action_to_string(np.array(action_env))
            #store in the result file the actions taken
            with open(results3_filepath, 'a') as f:
-               f.write(str(episode.id)+','+str(i_experience)+','+ str_action+'\n')
+               f.write(str(episode.id)+','+str(i_experience)+','+ str_action)
 
            print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
            gama_socket_as_file.write(str_action)
