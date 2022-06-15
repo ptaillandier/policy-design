@@ -157,7 +157,7 @@ species farmer schedules: shuffle(farmer) {
 	bool adoption <- false;
 	float technical_skill_init;
 	
-	float technical_skill <- 0.0;
+	float technical_skill <- 0.0 max: 1.0;
 	
 	action initialize {
 		opinion_on_topics <- copy(opinion_on_topics_init);
@@ -174,8 +174,8 @@ species farmer schedules: shuffle(farmer) {
 			ask one_of(social_network) {
 				float x_other <-opinion_on_topics[topic];
 				if abs(x - x_other) < opinion_diff_accep and (x != x_other){
-					myself.opinion_on_topics[topic] <- x + opinion_speed_convergenge * (x_other - x);
-					opinion_on_topics[topic] <- x_other + opinion_speed_convergenge * (x - x_other);
+					myself.opinion_on_topics[topic] <-max(0.0, min(1.0,  x + opinion_speed_convergenge * (x_other - x)));
+					opinion_on_topics[topic] <- max(0.0, min(1.0, x_other + opinion_speed_convergenge * (x - x_other)));
 					do compute_intention;
 					ask myself {
 						do compute_intention;
@@ -189,7 +189,7 @@ species farmer schedules: shuffle(farmer) {
 		attitude <- 0.0;
 		map<string, float> supp <- the_institution.support;
 		loop topic over: topics {
-			attitude <- attitude + (opinion_on_topics[topic] + (supp = nil ? 0.0 : supp[topic])) *  weights_for_topics[topic];
+			attitude <- attitude + min(1.0,(opinion_on_topics[topic] + (supp = nil ? 0.0 : supp[topic]))) *  weights_for_topics[topic];
 		}
 	}
 	action compute_social_norm {
@@ -251,9 +251,17 @@ species institution {
 	}
 	
 	action select_actions {
-		do financial_support(0.2);
-		do training(0.2, 0.1);
-		do environmental_sensibilisation(0.2, 1.0);
+		if financial_help_level > 0 {
+			do financial_support(financial_help_level);
+		}
+		if training_level > 0 and training_proportion > 0  {
+			do training(training_level, training_proportion);
+		}
+		if sensibilisation_level > 0 and sensibilisation_proportion > 0  {
+			do environmental_sensibilisation(sensibilisation_level, sensibilisation_proportion);
+		}
+	
+		
 		
 	}
 	action add_money {
@@ -270,7 +278,7 @@ species institution {
 		if (budget > (number * level)) {
 			ask number among farmer  {
 				technical_skill <- technical_skill + level;
-				opinion_on_topics[FARM_MANAGEMENT] <- opinion_on_topics[FARM_MANAGEMENT] + level; 
+				opinion_on_topics[FARM_MANAGEMENT] <- min(1.0, opinion_on_topics[FARM_MANAGEMENT] + level); 
 			}
 			budget <- budget - (number * level);
 		}
@@ -282,7 +290,7 @@ species institution {
 		if (budget > ((number * level) / 2.0)) {
 		        //write "environmental applied enough budget. Old budget: " + budget + " new budget " + (budget - (number * level) / 2.0);
 			ask number among farmer  {
-				opinion_on_topics[ENVIRONMENTAL] <- opinion_on_topics[ENVIRONMENTAL] + level; 
+				opinion_on_topics[ENVIRONMENTAL] <- min(1.0, opinion_on_topics[ENVIRONMENTAL]) + level; 
 			}
 			budget <- budget - (number * level) / 2.0;
 		}
