@@ -25,7 +25,8 @@ global {
 	float step <- 1 #day;
 	float end_simulation_after <- 5 #year;
 	int number_farmers <- 100;
-	float new_budget_year <- 10.0;
+	bool unlimited_budget <- false; 
+	float new_budget_year <-unlimited_budget ? #max_float : 10.0;
 	int nb_friends <- 5;
 	float opinion_diff_accep <- 0.5;
 	float opinion_speed_convergenge <- 0.1;
@@ -108,7 +109,7 @@ global {
 			}
 			social_network <- nb_friends among (farmer - self);
 			w_attitude <- rnd(1.0);
-			w_social <- rnd(1.0);
+			w_social <-  rnd(1.0);
 			w_pbc <- rnd(1.0);
 			technical_skill_init <- rnd(1.0);
 			sum_w <- w_attitude + w_social + w_pbc;
@@ -290,7 +291,7 @@ species institution {
 		if (budget > ((number * level) / 2.0)) {
 		        //write "environmental applied enough budget. Old budget: " + budget + " new budget " + (budget - (number * level) / 2.0);
 			ask number among farmer  {
-				opinion_on_topics[ENVIRONMENTAL] <- min(1.0, opinion_on_topics[ENVIRONMENTAL]) + level; 
+				opinion_on_topics[ENVIRONMENTAL] <- min(1.0, opinion_on_topics[ENVIRONMENTAL] + level); 
 			}
 			budget <- budget - (number * level) / 2.0;
 		}
