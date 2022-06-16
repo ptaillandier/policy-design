@@ -121,6 +121,7 @@ species institution_tcp parent: institution skills:[tcp] {
 
 experiment one_simulation_batch until: time >= end_simulation_after type: batch {
 	
+	parameter "port" var:port init:0;
 	
 	init {
 		mode_batch <- false;
@@ -129,7 +130,7 @@ experiment one_simulation_batch until: time >= end_simulation_after type: batch 
 
 experiment one_simulation type: gui {
 	 
-	 parameter "port" var:port init:0;
+	parameter "port" var:port init:0;
 	 
 	output {
 		display charts {
