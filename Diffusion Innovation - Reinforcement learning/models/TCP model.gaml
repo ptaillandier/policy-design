@@ -119,7 +119,7 @@ species institution_tcp parent: institution skills:[tcp] {
 } 
 
 
-experiment one_simulation_batch_TCP until: time >= end_simulation_after type: batch {
+experiment one_simulation_batch until: time >= end_simulation_after type: batch {
 	
 	
 	init {
@@ -127,7 +127,7 @@ experiment one_simulation_batch_TCP until: time >= end_simulation_after type: ba
 	}
 }
 
-experiment one_simulation_TCP type: gui {
+experiment one_simulation type: gui {
 	 
 	 parameter "port" var:port init:0;
 	 
