@@ -108,8 +108,8 @@ class PPOTraining:
 
     def compute_joint_neglogprob(model, actions, observations):
         distributions_params = model(observations)
-        logcon, mus, logsigmas = tf.split(distributions_params, [4, 3, 3], axis=1)
-        actions_budget, actions_theta = np.array_split(actions, [4], axis=1)
+        logcon, mus, logsigmas = tf.split(distributions_params, [3, 3, 3], axis=1)
+        actions_budget, actions_theta = np.array_split(actions, [3], axis=1)
         #print('logcon', logcon)
         #We create the dirichlet distribution with the logcon
         dirichlet_distribution = action_distributions.Dirichlet(logcon)

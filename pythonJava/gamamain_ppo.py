@@ -126,7 +126,7 @@ print("max_training_iters", max_training_iters)
 # Cost computed as Nman(100*Fman)*thetamanagement + N_new_adopters(max100,observed in next state)*thetaeconomy+0.5*Nenv(100*Fenv)*thetaenv
 n_actions       = 5    
 n_dimensions = 3 #3 dimensions: economy, management, environment
-layers_sizes.append(n_dimensions*3+1) #Add the last output layer considering 4 dimensions to split the budget the number of actions
+layers_sizes.append(n_dimensions*3) #Add the last output layer considering  dimensions to split the budget the number of actions
 
 # Observations (3) 
 # 1. Remaining budget - Remaining budget available to implement public policies
