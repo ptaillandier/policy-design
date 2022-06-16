@@ -35,6 +35,13 @@ class PPOTraining:
         self.gae_lambda = gae_lambda
         print('self.minibatch_splitting_method ', self.minibatch_splitting_method)
 
+    def compute_advantages_and_returns(self, episode):
+         # Compute the values for observations present in the episode
+         episode_values = np.squeeze(self.critic_model(np.vstack(episode.observations)))
+         # Compute episode advantages
+         episode_advantages = utils.gae(episode.rewards, np.append(episode_values,0), self.discount_factor, self.gae_lambda)
+         return episode_advantages, (episode_advantages-episode_values)
+
     def train(self, episodes, n_update_epochs, n_mini_batches):
         """Training step function (forward and backpropagation).
 
@@ -48,12 +55,11 @@ class PPOTraining:
         advantages = []
         for episode in episodes:
             # Compute the values for observations present in the episode
-            episode_values = np.squeeze(self.critic_model(np.vstack(episode.observations)))
-            # Compute advantages
-            episode_advantages = utils.gae(episode.rewards, np.append(episode_values,0), self.discount_factor, self.gae_lambda)
-            # Compute returns
-            returns.append(episode_advantages-episode_values)
-            advantages.append(episode_advantages)
+            episode_advantages, episode_returns = self.compute_advantages_and_returns(episode)
+            # Add returns
+            returns.append(episode_returns)
+            # Add advantages
+            advantages.append(episode_advantages)            
             # Compute disconted rewards-to-go (by now not used)
             discounted_rewards.append(utils.discount_rewards(episode.rewards, self.discount_factor))
             actions.append(episode.actions)
@@ -99,7 +105,21 @@ class PPOTraining:
                  minibatch_joint_neg_logprob = tf.gather(joint_neg_logprob, mbinds)
                  kl = self.actor_train_step( minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_joint_neg_logprob)
                  minibatch_returns = returns[mbinds]
-                 self.critic_train_step( minibatch_observations, minibatch_returns)      
+                 self.critic_train_step( minibatch_observations, minibatch_returns)
+                 #Recompute advantages and returns 
+                 print("RECOMPUTING ADVANTAGES AND RETURNS AT MINIBATCH ITERATION LEVEL")
+                 returns = []
+                 advantages = []
+                 for episode in episodes:
+                     # Compute the values for observations present in the episode
+                     episode_advantages, episode_returns = self.compute_advantages_and_returns(episode)
+                     # Add returns
+                     returns.append(episode_returns)
+                     # Add advantages
+                     advantages.append(episode_advantages)
+                 returns = np.concatenate(returns)
+                 advantages = np.concatenate(advantages)
+
                  print('update epoch: ', tpi,'minibatch ', start, ' kl:', kl)
                  if kl > 1.5 * self.target_kl:
                      print('Early stopping at epoch ', tpi)
