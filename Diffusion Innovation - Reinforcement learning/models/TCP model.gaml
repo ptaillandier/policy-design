@@ -14,8 +14,8 @@ global {
 	int port;
 	
 	institution create_intitution {
-		create institution;
-		return first(institution);
+		create institution_tcp;
+		return first(institution_tcp);
 	}
 	
 	

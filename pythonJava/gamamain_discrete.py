@@ -12,6 +12,7 @@ import argparse
 import numpy.typing as npt
 from user_local_variables import *
 import utils
+import traceback
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
@@ -105,7 +106,7 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            tic_b = time.time()
            received_observations: str = gama_socket_as_file.readline()
            time_simulation = time_simulation + time.time()-tic_b
-           if received_observations == "END\n":
+           if received_observations.endswith("END\n"):
                #print("simulation has ended")
                break
 
@@ -141,6 +142,10 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
            #print()
     except ConnectionResetError:
        print("connection reset, end of simulation")
+    except ValueError as e:
+       print("EXCEPTION pendant l'execution")
+       print(traceback.format_exc())
+       print(e)
     except:
         print("EXCEPTION pendant l'execution")
         print(sys.exc_info()[0])
@@ -211,8 +216,8 @@ if __name__ == "__main__":
             # run gama
             if gamainteraction.run_gama_headless(xml_path,
                                                  headless_dir,
-                                                 run_headless_script_path) == 2:
-                print("simulation " + str(i_episode) + " ended in error, stopping everything")
+                                                 run_headless_script_path) != 0:
+                print("simulation " + str(i_iter) + " ended in error, stopping everything")
                 sys.exit(-1)
             batch_episodes.append(episode)
         
