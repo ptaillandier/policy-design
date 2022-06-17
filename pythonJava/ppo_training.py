@@ -121,10 +121,10 @@ class PPOTraining:
                  advantages = np.concatenate(advantages)
 
                  print('update epoch: ', tpi,'minibatch ', start, ' kl:', kl)
-                 if kl > 1.5 * self.target_kl:
-                     print('Early stopping at epoch ', tpi)
+                 #if kl > 1.5 * self.target_kl:
+                     #print('Early stopping at epoch ', tpi)
                      # Early stopping
-                     break
+                     #break
 
     def compute_joint_neglogprob(model, actions, observations):
         distributions_params = model(observations)
@@ -189,10 +189,11 @@ class PPOTraining:
         grads = tape.gradient(loss, self.actor_model.trainable_variables)
         #print('grads', grads)
         self.actor_optimizer.apply_gradients(zip(grads, self.actor_model.trainable_variables))
-        kl = tf.reduce_mean(
-            -neglogprobability_buffer
-            + PPOTraining.compute_joint_neglogprob(self.actor_model, actions, observations)
-        )
-        kl = tf.reduce_sum(kl)
+        #kl = tf.reduce_mean(
+        #    -neglogprobability_buffer
+        #    + PPOTraining.compute_joint_neglogprob(self.actor_model, actions, observations)
+        #)
+        #kl = tf.reduce_sum(kl)
+        kl = tf.constant(0.0)
         return kl #Return KL divergence
 
