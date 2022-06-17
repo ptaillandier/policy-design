@@ -3,7 +3,7 @@ import time
 import sys
 from keras import Sequential
 import os
-import gamainteraction
+import gamainteraction_old as gamainteraction
 from policy_dirichlet import Policy
 from training_dirichlet import Training
 import numpy as np
