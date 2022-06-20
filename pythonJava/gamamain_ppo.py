@@ -259,10 +259,10 @@ if __name__ == "__main__":
     with open(results4_filepath, 'a') as f:
           f.write('iteration,decision_step,budget_obs,fadopters_obs,cman,cenv,cleft,mean_thetaeco,mean_thetaman,mean_thetaenv,std_thetaeco,std_thetaman,std_thetaenv\n')
     
-    actor_model = utils.mlp(n_observations, layers_sizes, activation = activation_function)
+    actor_model = utils.mlp(n_observations, layers_sizes, activation = activation_function, last_layer_scaling=0.01)
     print('actor_model.summary()')
     utils.full_summary(actor_model)
-    critic_model = utils.mlp(n_observations, np.append(layers_sizes[:-1],  1), activation = activation_function)
+    critic_model = utils.mlp(n_observations, np.append(layers_sizes[:-1],  1), activation = activation_function, last_layer_scaling=1.0)
     print('critic_model.summary()')
     utils.full_summary(critic_model)
     
