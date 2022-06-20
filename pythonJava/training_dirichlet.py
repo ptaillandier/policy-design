@@ -16,7 +16,7 @@ class Training:
         discount_factor: discount factor hyperparameter for the deep reinforcement learning rewards
     """
     
-    def __init__(self, model, optimizer=tf.keras.optimizers.Adam(1e-7), discount_factor=0.95):
+    def __init__(self, model, optimizer=tf.keras.optimizers.Adam(1e-4), discount_factor=0.99):
         """Constructor.
 
         Args:

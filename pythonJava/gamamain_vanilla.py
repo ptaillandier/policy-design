@@ -41,6 +41,20 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--learning-rate",
+    type=float,
+    default=3e-4,
+    help="The learning rate of the optimizer.",
+)
+
+parser.add_argument(
+    "--epsilon",
+    type=float,
+    default=1e-7,
+    help="The epsilon parameter of the optimizer.",
+)
+
+parser.add_argument(
     "--sizes",
     type=int,
     nargs = "+",
@@ -53,6 +67,8 @@ args = parser.parse_args()
 max_training_iters = args.iters # Number of training iterations (times that we run training)
 batch_size = args.num_batch_episodes
 discount_factor = args.discount_factor
+learning_rate = args.learning_rate
+epsilon = args.epsilon
 layers_sizes = args.sizes 
 ### End configuration variables ###
 n_episodes = max_training_iters*batch_size #The total number of episodes explored will be the number of iterations for the training par the size of batch examples processed on each training
@@ -160,13 +176,6 @@ def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> No
     print('\t','simulation time', time_simulation)
     return episode
 
-def train_model(_model: Sequential, _batch_episodes: List[utils.Episode], _discount_factor:float):
-    # Create a training based on model with the desired parameters.
-    tr = Training(_model, discount_factor=_discount_factor)
-
-    tr.train(_batch_episodes)
-
-
 
 
 if __name__ == "__main__":
@@ -254,7 +263,11 @@ if __name__ == "__main__":
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
-        train_model(model, batch_episodes, discount_factor)
+        # Create a training based on model with the desired parameters.
+        tr = Training(model, discount_factor=discount_factor, optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, epsilon=epsilon))
+        tr.train(batch_episodes)
+
+        
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
         print('it:',i_iter,'\t time:',time.time()-tic_b_iter)

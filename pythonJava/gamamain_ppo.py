@@ -55,6 +55,22 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--learning-rate",
+    type=float,
+    default=3e-4,
+    help="The learning rate of the optimizer. Same for policy and value networks",
+)
+
+parser.add_argument(
+    "--epsilon",
+    type=float,
+    default=1e-7,
+    help="The epsilon parameter of the optimizer. Same for policy and value networks",
+)
+
+
+
+parser.add_argument(
     "--gae-lambda",
     type=float,
     default=0.95,
@@ -99,8 +115,10 @@ elif args.activation == "tanh":
 ### End configuration variables ###
 ### Start configuration specific ppo variables ###
 clipping_ratio = 0.2
-policy_learning_rate = 1e-7
-critic_learning_rate = 1e-7
+policy_learning_rate = args.learning_rate
+critic_learning_rate = args.learning_rate
+policy_epsilon = args.epsilon
+critic_epsilon = args.epsilon
 target_kl = 0.01 #Roughly what KL divergence we think is appropriate between new and old policies after an update. This will get used for early stopping. (Usually small, 0.01 or 0.05.)
 gae_lambda = args.gae_lambda #Lambda parameter for the Generalized Advantage Estimation (GAE) 
 n_update_epochs = args.num_update_epochs #Number of epochs to update the policy (default set to 10,30) and it is the same number for actor and critic policy
@@ -329,9 +347,9 @@ if __name__ == "__main__":
 
         tic_b = time.time()
         print('discount_factor', discount_factor)
+        print('Optimiser Adam with learning rate', policy_learning_rate, " epsilon ", policy_epsilon)
         # Create a training based on model with the desired parameters.
-        policy_optimizer = tf.keras.optimizers.Adam(learning_rate=policy_learning_rate)
-        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor, gae_lambda=gae_lambda, minibatch_splitting_method=minibatch_splitting_method)
+        tr = PPOTraining(actor_model, critic_model, actor_optimizer= tf.keras.optimizers.Adam(learning_rate=policy_learning_rate, epsilon=policy_epsilon), critic_optimizer= tf.keras.optimizers.Adam(learning_rate=critic_learning_rate, epsilon=critic_epsilon), clipping_ratio=clipping_ratio, target_kl=target_kl, discount_factor=discount_factor, gae_lambda=gae_lambda, minibatch_splitting_method=minibatch_splitting_method)
         tr.train(batch_episodes, n_update_epochs, n_mini_batches)
         training_time = time.time() - tic_b
         print('\t','training time', training_time)
