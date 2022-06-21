@@ -5,7 +5,7 @@ from typing import Callable, TextIO
 import numpy.typing as npt
 import numpy as np
 import utils
-from policy import Policy
+from policy_dirichlet import Policy
 
 
 def simulation_loop(sock_server, gama_interaction_loop, episode) -> None:
