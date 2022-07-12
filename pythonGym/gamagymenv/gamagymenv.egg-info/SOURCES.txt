@@ -1,0 +1,6 @@
+setup.py
+gamagymenv.egg-info/PKG-INFO
+gamagymenv.egg-info/SOURCES.txt
+gamagymenv.egg-info/dependency_links.txt
+gamagymenv.egg-info/requires.txt
+gamagymenv.egg-info/top_level.txt

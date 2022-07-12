@@ -1,15 +1,17 @@
 # Import the RL algorithm (Trainer) we would like to use.
 from ray.rllib.agents.ppo import PPOTrainer
 from ray.tune.registry import register_env
-from simplegymenv.envs.simplegymenv import SimpleGymEnv
+
 
 # Configure the algorithm.
+from gamagymenv.envs import GamaGymEnv
+
 config = {
     # Environment (RLlib understands openAI gym registered strings).
-    "env": "SimpleGymEnv-v0",
-    # Use 2 environment workers (aka "rollout workers") that parallelly
+    "env": "GamaGymEnv-v0",
+    # Use 2 environment workers (aka "rollout workers") that parallely
     # collect samples from their own environment clone(s).
-    "num_workers": 2,
+    "num_workers": 1,
     # Change this to "framework: torch", if you are using PyTorch.
     # Also, use "framework: tf2" for tf2.x eager execution.
     "framework": "tf",
@@ -29,8 +31,8 @@ config = {
 }
 
 # register the custom environment in ray
-env = 'SimpleGymEnv-v0'
-register_env(env, lambda config: SimpleGymEnv())
+env = 'GamaGymEnv-v0'
+register_env(env, lambda config: GamaGymEnv())
 # Create our RLlib Trainer.
 trainer = PPOTrainer(config=config)
 
@@ -41,7 +43,7 @@ for _ in range(3):
     # Perform one iteration of training the policy with PPO
     result = trainer.train()
     print('result')
-    print(result)    
+    print(result)
 
 # Evaluate the trained Trainer (and render each timestep to the shell's
 # output).

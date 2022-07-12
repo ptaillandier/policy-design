@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='simpleGymEnv',
+setup(name='gamagymenv',
       version='0.0.1',
       install_requires=['gym']
-)  
+)
