@@ -234,11 +234,13 @@ species institution {
 	action other_things_init {
 	}
 	action initialize {
+	        write "initialize";
 		support <- [];
 		budget <- 0.0;
 		previous_adopters_nb <- 0;
 		previous_mean_intention <- 0.0;
 		do other_things_init;
+		write "END initialize";
 		
 	}
 	action thing_before_policy_selecting;
