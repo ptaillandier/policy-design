@@ -3,7 +3,7 @@ import numpy as np
 from typing import Optional
 from gym import spaces
 
-class SimpleGymEnv(gym.Env):
+class GamaEnv(gym.Env):
 
     def __init__(self):
         self.n_observations = 3 #Number of observations
