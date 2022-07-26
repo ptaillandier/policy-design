@@ -43,12 +43,12 @@ class GamaEnv(gym.Env):
             
     def step(self, action):
         print("STEP")
-        print("np.array(action)", np.array(action))
         # sending actions
         str_action = GamaEnv.action_to_string(np.array(action))
         print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
-        self.gama_simulation_as_file.write(str_action)
+        self.gama_simulation_as_file.write(srt_action)
         self.gama_simulation_as_file.flush()
+        print("model sent policy, now waiting for reward")
         # we wait for the reward
         policy_reward = self.gama_simulation_as_file.readline()
         reward = float(policy_reward)
@@ -68,7 +68,6 @@ class GamaEnv(gym.Env):
         #self.state = np.random.rand(1, self.n_observations).flatten()
         self.state, end = self.read_observations() #TODO: probably useless
         print('self.state', self.state)
-        print('type(self.state)', type(self.state))
         print("END RESET")
         if not return_info:
             return np.array(self.state, dtype=np.float32)
@@ -139,17 +138,27 @@ class GamaEnv(gym.Env):
         conn, addr = self.gama_socket.accept()
         print("gama connected:", conn, addr)
         self.gama_simulation_as_file = conn.makefile(mode='rw')
-        print(self.gama_simulation_as_file)
+        print("self.gama_simulation_as_file",self.gama_simulation_as_file)
 
     def read_observations(self):
 
         received_observations: str = self.gama_simulation_as_file.readline()
         print("model received:", received_observations)
-        obs     = string_to_nparray(received_observations.replace("END", ""))
+        obs     = GamaEnv.string_to_nparray(received_observations.replace("END", ""))
         #obs[2]  = float(self.n_times_4_action - self.i_experience)  # We change the last observation to be the number of times that remain for changing the policy
         over = "END\n" in received_observations
 
         return obs, over
+
+    # Converts an string to a numpy array of floats
+    @classmethod
+    def string_to_nparray(cls, array_as_string: str) -> npt.NDArray[np.float64]:
+        # first we remove brackets and parentheses
+        clean = "".join([c if c not in "()[]{}" else '' for c in str(array_as_string)])
+        # then we split into numbers
+        nbs = [float(nb) for nb in filter(lambda s: s.strip() != "", clean.split(','))]
+        return np.array(nbs)
+
 
     # Converts an action to a string to be sent to the simulation
     @classmethod

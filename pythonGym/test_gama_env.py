@@ -8,15 +8,14 @@ from ray.rllib.utils.pre_checks import env as env_checker_ray
 class TestSimpleGymEnv(unittest.TestCase):
     def test_simple_gym_env(self):
         env = gym.make('GamaEnv-v0')
-        env.reset()
         print('env._max_episode_steps', env._max_episode_steps)
         n_iters = 1
         done = False
         for iter in range(n_iters):
-            env.reset()
+            initial_observation = env.reset()
+            print('initial_observation ', initial_observation)
             while not done:
                 action = np.random.rand(1,5).flatten()
-                print('steping action', action)
                 next_observation, reward, done, info = env.step(action)
                 print('done', done)
 
