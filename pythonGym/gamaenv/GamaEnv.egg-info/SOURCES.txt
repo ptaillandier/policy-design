@@ -1,0 +1,7 @@
+README.md
+setup.py
+GamaEnv.egg-info/PKG-INFO
+GamaEnv.egg-info/SOURCES.txt
+GamaEnv.egg-info/dependency_links.txt
+GamaEnv.egg-info/requires.txt
+GamaEnv.egg-info/top_level.txt

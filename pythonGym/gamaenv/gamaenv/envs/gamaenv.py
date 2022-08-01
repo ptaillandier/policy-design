@@ -6,22 +6,37 @@ import numpy as np
 import numpy.typing as npt
 from typing import Optional
 from gym import spaces
-from gamaenv.user_local_variables import *
+
 
 class GamaEnv(gym.Env):
+
+
+    # USER LOCAL VARIABLES
+    headless_dir: str               # Root directory for gama headless
+    run_headless_script_path: str   # Path to the script that runs gama headless
+    gaml_file_path: str             # Path to the gaml file containing the experiment/simulation to run
+    experiment_name: str            # Name of the experiment to run
+
+
     # ENVIRONMENT CONSTANTS
     init_budget:        float   = 10.0
     n_observations:     int     = 3
     n_execution_steps:  int     = 9
     steps_before_done:  int     = n_execution_steps
-    max_episode_steps: int     = 11
+    max_episode_steps:  int     = 11
     n_times_4_action:   int     = 10  # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
 
     # Simulation execution variables
     gama_socket:                socket
     gama_simulation_as_file     = None # For some reason the typing doesn't work
 
-    def __init__(self):
+    def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiement_path: str, gaml_experiment_name: str):
+
+        self.headless_dir               = headless_directory
+        self.run_headless_script_path   = headless_script_path
+        self.gaml_file_path             = gaml_experiement_path
+        self.experiment_name            = gaml_experiment_name
+
         print("INIT")
         # OBSERVATION SPACE:
         # 1. Remaining budget                               - Remaining budget available to implement public policies
@@ -46,7 +61,7 @@ class GamaEnv(gym.Env):
         # sending actions
         str_action = GamaEnv.action_to_string(np.array(action))
         print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
-        self.gama_simulation_as_file.write(srt_action)
+        self.gama_simulation_as_file.write(str_action)
         self.gama_simulation_as_file.flush()
         print("model sent policy, now waiting for reward")
         # we wait for the reward
@@ -56,6 +71,10 @@ class GamaEnv(gym.Env):
         self.state, end = self.read_observations()
         print("observations received", self.state, end)
         print("END STEP")
+        # If it was the final step, we need to send a message back to the simulation once everything done to acknowledge that it can now close
+        if end:
+            self.gama_simulation_as_file.write("END\n")
+            self.gama_simulation_as_file.flush()
         return np.array(self.state, dtype=np.float32), reward, end, {} 
 
     # Must reset the simulation to its initial state
@@ -81,8 +100,8 @@ class GamaEnv(gym.Env):
     # Init the server + run gama
     def run_gama_simulation(self):
         port = self.listener_init()
-        xml_path = GamaEnv.generate_gama_xml(headless_dir, port, gaml_file_path, experiment_name)
-        start_new_thread(GamaEnv.run_gama_headless, (xml_path, headless_dir, run_headless_script_path))
+        xml_path = GamaEnv.generate_gama_xml(self.headless_dir, port, self.gaml_file_path, self.experiment_name)
+        start_new_thread(GamaEnv.run_gama_headless, (xml_path, self.headless_dir, self.run_headless_script_path))
 
     # Generates an XML file that can be used to run gama in headless mode, listener_port is used as a parameter of
     # the simulation to communicate through tcp
@@ -144,9 +163,10 @@ class GamaEnv(gym.Env):
 
         received_observations: str = self.gama_simulation_as_file.readline()
         print("model received:", received_observations)
-        obs     = GamaEnv.string_to_nparray(received_observations.replace("END", ""))
+
+        over = "END" in received_observations
+        obs  = GamaEnv.string_to_nparray(received_observations.replace("END", ""))
         #obs[2]  = float(self.n_times_4_action - self.i_experience)  # We change the last observation to be the number of times that remain for changing the policy
-        over = "END\n" in received_observations
 
         return obs, over
 
