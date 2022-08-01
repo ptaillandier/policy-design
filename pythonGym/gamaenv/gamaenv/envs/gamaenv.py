@@ -1,4 +1,5 @@
 import gym
+import time
 import os
 import socket
 from _thread import *
@@ -85,10 +86,12 @@ class GamaEnv(gym.Env):
     # Should return the initial observations
     def reset(self,*,seed: Optional[int] = None,return_info: bool = False,options: Optional[dict] = None ): 
         print("RESET")
+        tic_setting_gama = time.time()
         # Starts gama and get initial state
         self.run_gama_simulation()
         self.wait_for_gama_to_connect()
-        self.state, end = self.read_observations() 
+        self.state, end = self.read_observations()
+        print('\t','setting up gama', time.time()-tic_setting_gama)
         print('after reset self.state', self.state)
         print('after reset end', end)
         print("END RESET")
