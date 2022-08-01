@@ -18,12 +18,7 @@ class GamaEnv(gym.Env):
 
 
     # ENVIRONMENT CONSTANTS
-    init_budget:        float   = 10.0
-    n_observations:     int     = 3
-    n_execution_steps:  int     = 9
-    steps_before_done:  int     = n_execution_steps
     max_episode_steps:  int     = 11
-    n_times_4_action:   int     = 10  # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
 
     # Simulation execution variables
     gama_socket:                socket
@@ -56,28 +51,34 @@ class GamaEnv(gym.Env):
         print("END INIT")
             
     def step(self, action):
-        print("STEP")
-        # sending actions
-        str_action = GamaEnv.action_to_string(np.array(action))
-        print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
-        self.gama_simulation_as_file.write(str_action)
-        self.gama_simulation_as_file.flush()
-        print("model sent policy, now waiting for reward")
-        # we wait for the reward
-        policy_reward = self.gama_simulation_as_file.readline()
-        reward = float(policy_reward)
-        print("model received reward:", policy_reward, " as a float: ", reward)
-        self.state, end = self.read_observations()
-        print("observations received", self.state, end)
-        print("END STEP")
-        # If it was the final step, we need to send a message back to the simulation once everything done to acknowledge that it can now close
-        if end:
-            self.gama_simulation_as_file.write("END\n")
+        try:
+            print("STEP")
+            # sending actions
+            str_action = GamaEnv.action_to_string(np.array(action))
+            print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
+            self.gama_simulation_as_file.write(str_action)
             self.gama_simulation_as_file.flush()
-            self.gama_simulation_as_file.close()
-            self.gama_simulation_connection.close()
-            self.gama_socket.close()
-
+            print("model sent policy, now waiting for reward")
+            # we wait for the reward
+            policy_reward = self.gama_simulation_as_file.readline()
+            reward = float(policy_reward)
+            print("model received reward:", policy_reward, " as a float: ", reward)
+            self.state, end = self.read_observations()
+            print("observations received", self.state, end)
+            # If it was the final step, we need to send a message back to the simulation once everything done to acknowledge that it can now close
+            if end:
+                self.gama_simulation_as_file.write("END\n")
+                self.gama_simulation_as_file.flush()
+                self.gama_simulation_as_file.close()
+                self.gama_simulation_connection.close()
+                self.gama_socket.close()
+        except ConnectionResetError:
+            print("connection reset, end of simulation")
+        except:
+            print("EXCEPTION pendant l'execution")
+            print(sys.exc_info()[0])
+            sys.exit(-1)
+        print("END STEP")
         return np.array(self.state, dtype=np.float32), reward, end, {} 
 
     # Must reset the simulation to its initial state
@@ -88,7 +89,8 @@ class GamaEnv(gym.Env):
         self.run_gama_simulation()
         self.wait_for_gama_to_connect()
         self.state, end = self.read_observations() 
-        print('self.state', self.state)
+        print('after reset self.state', self.state)
+        print('after reset end', end)
         print("END RESET")
         if not return_info:
             return np.array(self.state, dtype=np.float32)

@@ -16,7 +16,7 @@ class TestSimpleGymEnv(unittest.TestCase):
                         gaml_experiement_path   = lv.gaml_file_path,
                         gaml_experiment_name    = lv.experiment_name)
         print('env._max_episode_steps', env._max_episode_steps)
-        n_iters = 1
+        n_iters = 2
         done = False
         for iter in range(n_iters):
             initial_observation = env.reset()
@@ -25,6 +25,7 @@ class TestSimpleGymEnv(unittest.TestCase):
                 action = np.random.rand(1,5).flatten()
                 next_observation, reward, done, info = env.step(action)
                 print('done', done)
+            done = False
 
     #def test_simple_gym_env2(self):
         #env = gym.make('GamaEnv-v0')
