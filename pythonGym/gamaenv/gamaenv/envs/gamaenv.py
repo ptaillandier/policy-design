@@ -24,11 +24,11 @@ class GamaEnv(gym.Env):
     gama_socket:                socket
     gama_simulation_as_file     = None # For some reason the typing doesn't work
     gama_simulation_connection  = None # Resulting from socket create connection
-    def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiement_path: str, gaml_experiment_name: str):
+    def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiment_path: str, gaml_experiment_name: str):
 
         self.headless_dir               = headless_directory
         self.run_headless_script_path   = headless_script_path
-        self.gaml_file_path             = gaml_experiement_path
+        self.gaml_file_path             = gaml_experiment_path
         self.experiment_name            = gaml_experiment_name
 
         print("INIT")

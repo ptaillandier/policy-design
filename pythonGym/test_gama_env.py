@@ -13,7 +13,7 @@ class TestSimpleGymEnv(unittest.TestCase):
         env = gym.make('GamaEnv-v0',
                         headless_directory      = lv.headless_dir,
                         headless_script_path    = lv.run_headless_script_path,
-                        gaml_experiement_path   = lv.gaml_file_path,
+                        gaml_experiment_path   = lv.gaml_file_path,
                         gaml_experiment_name    = lv.experiment_name)
         print('env._max_episode_steps', env._max_episode_steps)
         n_iters = 2
