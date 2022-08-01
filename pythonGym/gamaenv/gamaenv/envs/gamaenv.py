@@ -7,7 +7,6 @@ import numpy.typing as npt
 from typing import Optional
 from gym import spaces
 
-
 class GamaEnv(gym.Env):
 
 
@@ -29,7 +28,7 @@ class GamaEnv(gym.Env):
     # Simulation execution variables
     gama_socket:                socket
     gama_simulation_as_file     = None # For some reason the typing doesn't work
-
+    gama_simulation_connection  = None # Resulting from socket create connection
     def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiement_path: str, gaml_experiment_name: str):
 
         self.headless_dir               = headless_directory
@@ -75,6 +74,10 @@ class GamaEnv(gym.Env):
         if end:
             self.gama_simulation_as_file.write("END\n")
             self.gama_simulation_as_file.flush()
+            self.gama_simulation_as_file.close()
+            self.gama_simulation_connection.close()
+            self.gama_socket.close()
+
         return np.array(self.state, dtype=np.float32), reward, end, {} 
 
     # Must reset the simulation to its initial state
@@ -84,8 +87,7 @@ class GamaEnv(gym.Env):
         # Starts gama and get initial state
         self.run_gama_simulation()
         self.wait_for_gama_to_connect()
-        #self.state = np.random.rand(1, self.n_observations).flatten()
-        self.state, end = self.read_observations() #TODO: probably useless
+        self.state, end = self.read_observations() 
         print('self.state', self.state)
         print("END RESET")
         if not return_info:
@@ -154,9 +156,9 @@ class GamaEnv(gym.Env):
     def wait_for_gama_to_connect(self):
 
         #The server is waiting for clients to connect
-        conn, addr = self.gama_socket.accept()
-        print("gama connected:", conn, addr)
-        self.gama_simulation_as_file = conn.makefile(mode='rw')
+        self.gama_simulation_connection, addr = self.gama_socket.accept()
+        print("gama connected:", self.gama_simulation_connection, addr)
+        self.gama_simulation_as_file = self.gama_simulation_connection.makefile(mode='rw')
         print("self.gama_simulation_as_file",self.gama_simulation_as_file)
 
     def read_observations(self):
