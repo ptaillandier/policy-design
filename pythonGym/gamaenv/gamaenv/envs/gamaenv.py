@@ -1,6 +1,7 @@
 import gym
 import time
 import os
+import sys
 import socket
 from _thread import *
 import numpy as np
@@ -22,7 +23,7 @@ class GamaEnv(gym.Env):
     max_episode_steps:  int     = 11
 
     # Simulation execution variables
-    gama_socket:                socket
+    gama_socket:                socket = None
     gama_simulation_as_file     = None # For some reason the typing doesn't work
     gama_simulation_connection  = None # Resulting from socket create connection
     def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiment_path: str, gaml_experiment_name: str):
@@ -86,6 +87,17 @@ class GamaEnv(gym.Env):
     # Should return the initial observations
     def reset(self,*,seed: Optional[int] = None,return_info: bool = False,options: Optional[dict] = None ): 
         print("RESET")
+        print("self.gama_simulation_as_file", self.gama_simulation_as_file)
+        print("self.gama_simulation_connection",
+              self.gama_simulation_connection)
+        print("self.gama_socket", self.gama_socket)
+
+        #Check if the environment terminated 
+        if self.gama_socket is not None:
+            print("self.gama_socket.fileno()", self.gama_socket.fileno())
+            if self.gama_socket.fileno() is not -1:
+                self.gama_socket.close()
+
         tic_setting_gama = time.time()
         # Starts gama and get initial state
         self.run_gama_simulation()
