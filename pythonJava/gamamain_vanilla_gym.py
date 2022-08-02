@@ -149,6 +149,7 @@ if __name__ == "__main__":
 
     model = utils.mlp(n_observations, layers_sizes)
     print('model.summary()', model.summary())
+    utils.full_summary(model)
     policy_manager: Policy = Policy(model)
     print('max_training_iters', max_training_iters)
     i_episode = 0
