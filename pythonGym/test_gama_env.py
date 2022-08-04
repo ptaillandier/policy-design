@@ -45,8 +45,10 @@ class TestGamaGymEnv(unittest.TestCase):
                 action = np.random.rand(1,5).flatten()
                 next_observation, reward, done, info = env.step(action)
                 print('done', done)
-            done = False
-
+            env.reset()
+            while not done:
+                action = np.random.rand(1,5).flatten()
+                next_observation, reward, done, info = env.step(action)
 
     #def test_gama_checkenv_gym(self):
         #env = gym.make('GamaEnv-v0',
