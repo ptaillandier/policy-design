@@ -13,7 +13,7 @@ global {
 	
 	int port;
 	
-	institution create_intitution {
+	institution create_institution {
 		create institution_tcp;
 		return first(institution_tcp);
 	}

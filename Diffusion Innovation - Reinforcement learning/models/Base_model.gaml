@@ -72,12 +72,12 @@ global {
 	bool end_simulation <- false;
 	bool pause_sim <- false;
 	
-	institution create_intitution {
+	institution create_institution {
 		create institution;
 		return first(institution);
 	}
 	init {
-		the_institution <- create_intitution();
+		the_institution <- create_institution();
 		ask the_institution {do initialize;}
 		do create_farmers;
 	}
