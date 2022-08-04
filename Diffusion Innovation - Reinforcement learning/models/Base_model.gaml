@@ -51,6 +51,7 @@ global {
 	institution the_institution;
 	float time_sim update: time_sim + step;
 	/********* OUTPUT ***********/
+	int adopters_nb <- 0;
 	float adoption_rate <- 0.0 ;
 	float min_intention <- 0.0 ;
 	float max_intention <- 0.0 ;
@@ -87,6 +88,7 @@ global {
 	
 	action update_outputs(list<farmer> farmers) {
 		adoption_rate <- (farmers count each.adoption) /length(farmers);
+		adopters_nb <- (farmers count each.adoption);
 		mean_intention <- farmers mean_of (each.intention);
 		min_intention <- farmers min_of (each.intention) ;
 		max_intention <- farmers max_of (each.intention);
@@ -230,6 +232,7 @@ species institution {
 	map<string,float> support;
 	int previous_adopters_nb;
 	float previous_mean_intention;
+	float previous_adoption_rate;
 	
 	action other_things_init {
 	}
@@ -239,6 +242,7 @@ species institution {
 		budget <- 0.0;
 		previous_adopters_nb <- 0;
 		previous_mean_intention <- 0.0;
+		previous_adoption_rate <- 0.0;
 		do other_things_init;
 		write "END initialize";
 		

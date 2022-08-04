@@ -71,8 +71,9 @@ species institution_tcp parent: institution skills:[tcp] {
 
 	action send_reward {
 		if(at_least_one_policy) {
-			//The reward = percentage of progression of mean_intention
-			float reward 	<- previous_mean_intention != 0 ? (mean_intention - previous_mean_intention)/ previous_mean_intention : mean_intention ;
+			//The reward = increment on percentage of new adopters
+			//float reward 	<- previous_mean_intention != 0 ? (mean_intention - previous_mean_intention)/ previous_mean_intention : mean_intention ;
+			let reward 	<- (adopters_nb - previous_adopters_nb)/number_farmers;
 			bool sent 	<- send(server, string(reward) + "\n");
 			if (! sent) {
 				write "impossible d'envoyer le reward " + reward + " à : " + server;
@@ -82,6 +83,8 @@ species institution_tcp parent: institution skills:[tcp] {
 			at_least_one_policy <- true;
 		}
 		previous_mean_intention <- mean_intention;
+		previous_adoption_rate <- adoption_rate;
+                previous_adopters_nb <- adopters_nb;
 	}
 
 	action send_observations {
