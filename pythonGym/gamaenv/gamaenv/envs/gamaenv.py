@@ -95,7 +95,7 @@ class GamaEnv(gym.Env):
         #Check if the environment terminated 
         if self.gama_socket is not None:
             print("self.gama_socket.fileno()", self.gama_socket.fileno())
-            if self.gama_socket.fileno() is not -1:
+            if self.gama_socket.fileno() != -1:
                 self.gama_socket.close()
 
         tic_setting_gama = time.time()
