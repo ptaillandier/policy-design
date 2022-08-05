@@ -23,7 +23,7 @@ class GamaEnv(gym.Env):
     max_episode_steps:  int     = 11
 
     # Simulation execution variables
-    gama_socket:                socket = None
+    gama_socket = None
     gama_simulation_as_file     = None # For some reason the typing doesn't work
     gama_simulation_connection  = None # Resulting from socket create connection
     def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiment_path: str, gaml_experiment_name: str):
@@ -72,7 +72,9 @@ class GamaEnv(gym.Env):
                 self.gama_simulation_as_file.write("END\n")
                 self.gama_simulation_as_file.flush()
                 self.gama_simulation_as_file.close()
+                self.gama_simulation_connection.shutdown(socket.SHUT_RDWR)
                 self.gama_simulation_connection.close()
+                self.gama_socket.shutdown(socket.SHUT_RDWR)
                 self.gama_socket.close()
         except ConnectionResetError:
             print("connection reset, end of simulation")
@@ -90,14 +92,15 @@ class GamaEnv(gym.Env):
         print("self.gama_simulation_as_file", self.gama_simulation_as_file)
         print("self.gama_simulation_connection",
               self.gama_simulation_connection)
-        print("self.gama_socket", self.gama_socket)
-
         #Check if the environment terminated 
-        if self.gama_socket is not None:
-            print("self.gama_socket.fileno()", self.gama_socket.fileno())
-            if self.gama_socket.fileno() != -1:
+        if self.gama_simulation_connection is not None:
+            print("self.gama_simulation_connection.fileno()",
+                  self.gama_simulation_connection.fileno())
+            if self.gama_simulation_connection.fileno() != -1:
+                self.gama_simulation_connection.shutdown(socket.SHUT_RDWR)
+                self.gama_simulation_connection.close()
+                self.gama_socket.shutdown(socket.SHUT_RDWR)
                 self.gama_socket.close()
-
         tic_setting_gama = time.time()
         # Starts gama and get initial state
         self.run_gama_simulation()

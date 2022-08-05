@@ -66,6 +66,8 @@ species institution_tcp parent: institution skills:[tcp] {
 		let sent 	<- send(server, observations+"END\n");
 		if (! sent) {
 			write "impossible d'envoyer le message de fin de simulation à : " + server;
+			write "dying";
+			do die;
 		}
 	}	
 
@@ -77,6 +79,8 @@ species institution_tcp parent: institution skills:[tcp] {
 			bool sent 	<- send(server, string(reward) + "\n");
 			if (! sent) {
 				write "impossible d'envoyer le reward " + reward + " à : " + server;
+				write "dying";
+				do die;
 			}
 		}
 		else {
@@ -93,6 +97,8 @@ species institution_tcp parent: institution skills:[tcp] {
 		let sent <- send(server, observations);
 		if(!sent) {
 			write "Impossible d'envoyer les observations "+ observations + " au serveur " + server;
+			write "dying";
+			do die;
 		}
 		
 		
@@ -120,6 +126,8 @@ species institution_tcp parent: institution skills:[tcp] {
 		}
 		else {
 			write "impossible de recevoir une politique du serveur " + server;
+			write "dying";
+			do die;
 		}
 		
 		
@@ -142,19 +150,19 @@ experiment one_simulation type: gui {
 	 
 	parameter "port" var:port init:0;
 	 
-	output {
-		display charts {
-			chart "intention of farmers" memorize:false type: series  size: {1.0,0.5}{
-				data "mean intention" value: mean_intention color: #blue marker: false;
-				data "min intention" value:min_intention color: #red marker: false;
-				data "max intention" value: max_intention color: #green marker: false;
-				data "median intention" value: median_intention color: #magenta marker: false;
+	//output {
+		//display charts {
+		//	chart "intention of farmers" memorize:false type: series  size: {1.0,0.5}{
+		//		data "mean intention" value: mean_intention color: #blue marker: false;
+		//		data "min intention" value:min_intention color: #red marker: false;
+		//		data "max intention" value: max_intention color: #green marker: false;
+		//		data "median intention" value: median_intention color: #magenta marker: false;
 			
-			}
-			chart "percentage of adopters" memorize:false type: series size: {1.0,0.5} position: {0.0,0.5} {
-				data "percentage of adopters" value: adoption_rate * 100.0  color: #green;
+		//	}
+		//	chart "percentage of adopters" memorize:false type: series size: {1.0,0.5} position: {0.0,0.5} {
+		//		data "percentage of adopters" value: adoption_rate * 100.0  color: #green;
 					
-			}
-		}
-	}
+		//	}
+		//}
+	//}
 }
