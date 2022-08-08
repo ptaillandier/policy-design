@@ -63,7 +63,10 @@ class GamaEnv(gym.Env):
             print("model sent policy, now waiting for reward")
             # we wait for the reward
             policy_reward = self.gama_simulation_as_file.readline()
+            self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is strange
+            
             reward = float(policy_reward)
+
             print("model received reward:", policy_reward, " as a float: ", reward)
             self.state, end = self.read_observations()
             print("observations received", self.state, end)
@@ -101,6 +104,10 @@ class GamaEnv(gym.Env):
                 self.gama_simulation_connection.close()
                 self.gama_socket.shutdown(socket.SHUT_RDWR)
                 self.gama_socket.close()
+        if self.gama_simulation_as_file is not None:
+            self.gama_simulation_as_file.close()
+            self.gama_simulation_as_file = None
+
         tic_setting_gama = time.time()
         # Starts gama and get initial state
         self.run_gama_simulation()
@@ -179,12 +186,18 @@ class GamaEnv(gym.Env):
         self.gama_simulation_connection, addr = self.gama_socket.accept()
         print("gama connected:", self.gama_simulation_connection, addr)
         self.gama_simulation_as_file = self.gama_simulation_connection.makefile(mode='rw')
-        print("self.gama_simulation_as_file",self.gama_simulation_as_file)
+        print("self.gama_simulation_as_file", self.gama_simulation_as_file)
+        print("reading lines because gama connection is strange")
+        print("line:", self.gama_simulation_as_file.readline())
+        print("line:", self.gama_simulation_as_file.readline())
+        print("line:", self.gama_simulation_as_file.readline())
+        print("line:", self.gama_simulation_as_file.readline())
 
     def read_observations(self):
 
         received_observations: str = self.gama_simulation_as_file.readline()
         print("model received:", received_observations)
+        self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is marvelous
 
         over = "END" in received_observations
         obs  = GamaEnv.string_to_nparray(received_observations.replace("END", ""))
@@ -192,7 +205,7 @@ class GamaEnv(gym.Env):
 
         return obs, over
 
-    # Converts an string to a numpy array of floats
+    # Converts a string to a numpy array of floats
     @classmethod
     def string_to_nparray(cls, array_as_string: str) -> npt.NDArray[np.float64]:
         # first we remove brackets and parentheses
