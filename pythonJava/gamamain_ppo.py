@@ -159,7 +159,6 @@ n_times_4_action = 10 # Number of times in which the policy maker can change the
 # 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
 ACTORMODELPATH              = 'actor_nngamma' # Path to the file where to store the actor neural network
 CRITICMODELPATH             = 'critic_nngamma' # Path to the file where to store the critic neural network
-results_filepath            = 'results_sum_rewards.csv'
 results2_filepath           = 'results_number_adopters.csv'
 results3_filepath           = 'results_actions.csv'
 results4_filepath           = 'results_nnoutputs.csv'
@@ -248,16 +247,6 @@ if __name__ == "__main__":
                    headless_script_path     = run_headless_script_path,
                    gaml_experiment_path     = gaml_file_path, 
                    gaml_experiment_name     = experiment_name)
-
-
-    #Check that the result file for evaluation does not exist
-    try:
-      os.remove(results_filepath)
-    except OSError:
-          pass
-    #First line contains the title
-    with open(results_filepath, 'a') as f:
-          f.write('sum_of_episode_rewards\n')
 
     #Check that the result2 file for evaluation does not exist
     try:
@@ -349,9 +338,6 @@ if __name__ == "__main__":
         i_batch_episode = 0
         for episode in batch_episodes:
             sum_episode_rewards = sum(episode.rewards) #the sum of discounted? rewards of an episode is the basic component for all performance stadistics
-            #store in the resuls file the sum of rewards for this episode
-            with open(results_filepath, 'a') as f:
-                f.write(str(sum_episode_rewards)+'\n')
             # Save the number of adopters end of each episode for statistics
             with open(results2_filepath, 'a') as f:
                 f.write(str(episode.last_observation[1])+'\n')
