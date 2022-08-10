@@ -92,7 +92,7 @@ layers_sizes.append(n_dimensions*3) #Add the last output layer considering 3 dim
 # 3. Remaining time before ending the simulation - Unit (in seconds)
 
 n_observations  = 3     # Number of observations from the state of the social planner, can be modified for testing
-n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon:     5 years)
+#n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon:     5 years)
 
 
 # Rewards
@@ -159,7 +159,7 @@ if __name__ == "__main__":
             tic_b = time.time()
             obs = env.reset()
             time_simulation = time_simulation + time.time()-tic_b
-            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times tha    t remain for changing the policy
+            #obs[2] = float(n_times_4_action-obs[2]) #We change the last observation to be the number of times tha    t remain for changing the policy
             print("model initially received:", obs)
             done = False
             while not done:
@@ -169,7 +169,7 @@ if __name__ == "__main__":
                 time_updating_policy = time_updating_policy + time.time() - tic_b
                 #store in the result file the outputs of the nn 
                 with open(results4_filepath, 'a') as f:
-                    f.write(str(episode.id)+','+str(i_experience)+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output)     for output in nn_outputs])+'\n')
+                    f.write(str(episode.id)+','+str(obs[2])+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output)     for output in nn_outputs])+'\n')
                 str_action = ",".join([str(action) for action in action_env]) + "\n" 
                 #store in the result file the actions taken
                 with open(results3_filepath, 'a') as f:
@@ -180,6 +180,7 @@ if __name__ == "__main__":
                 next_obs, reward, done, info = env.step(action_env)
                 time_simulation = time_simulation + time.time() - tic_b
                 print("model received reward:", reward)
+                print("model received:", next_obs)
                 episode.add_experience(obs, action, float(reward))
                 obs = next_obs
                 i_experience = i_experience + 1
