@@ -37,8 +37,8 @@ class GamaEnv(gym.Env):
         # OBSERVATION SPACE:
         # 1. Remaining budget                               - Remaining budget available to implement public policies
         # 2. Fraction of adopters                           - Fraction of adopters [0,1]
-        # 3. Remaining time before ending the simulation    - Unit (in steps)
-        obs_high_bounds = np.array([50.0, 1.0, np.Inf])
+        # 3. Number of times policy applied action    - Unit (in steps)
+        obs_high_bounds = np.array([50.0, 1.0, self.max_episode_steps])
         obs_low_bounds  = np.array([0.0, 0.0, 0.0])
         self.observation_space = spaces.Box(obs_low_bounds, obs_high_bounds, dtype=np.float32)
         # ACTIONS:
