@@ -9,23 +9,23 @@ import user_local_variables as lv
 import random
 
 class TestGamaGymEnv(unittest.TestCase):
-    #def test_gama_gym(self):
-        #env = gym.make('GamaEnv-v0',
-         #               headless_directory      = lv.headless_dir,
-         #               headless_script_path    = lv.run_headless_script_path,
-         #               gaml_experiment_path   = lv.gaml_file_path,
-         #               gaml_experiment_name    = lv.experiment_name)
-        #print('env._max_episode_steps', env._max_episode_steps)
-        #n_iters = 2
-        #done = False
-        #for iter in range(n_iters):
-         #   initial_observation = env.reset()
-         #   print('initial_observation ', initial_observation)
-         #   while not done:
-         #       action = np.random.rand(1,5).flatten()
-         #       next_observation, reward, done, info = env.step(action)
-         #       print('done', done)
-         #   done = False
+#    def test_multiple_sequential_executions(self):
+#        env = gym.make('GamaEnv-v0',
+#                        headless_directory      = lv.headless_dir,
+#                        headless_script_path    = lv.run_headless_script_path,
+#                        gaml_experiment_path   = lv.gaml_file_path,
+#                        gaml_experiment_name    = lv.experiment_name)
+#        print('env._max_episode_steps', env._max_episode_steps)
+#        n_iters = 2
+#        done = False
+#        for iter in range(n_iters):
+#            initial_observation = env.reset()
+#            print('initial_observation ', initial_observation)
+#            while not done:
+#                action = np.random.rand(1,5).flatten()
+#                next_observation, reward, done, info = env.step(action)
+#                print('done', done)
+#            done = False
 
     def test_gama_gym_reset_before_termination(self):
         env = gym.make('GamaEnv-v0',
