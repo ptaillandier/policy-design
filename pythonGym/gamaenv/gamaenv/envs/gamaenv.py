@@ -33,7 +33,7 @@ class GamaEnv(gym.Env):
         self.gaml_file_path             = gaml_experiment_path
         self.experiment_name            = gaml_experiment_name
 
-        print("INIT")
+        #print("INIT")
         # OBSERVATION SPACE:
         # 1. Remaining budget                               - Remaining budget available to implement public policies
         # 2. Fraction of adopters                           - Fraction of adopters [0,1]
@@ -50,26 +50,26 @@ class GamaEnv(gym.Env):
         action_high_bounds  = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
         action_low_bounds   = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
         self.action_space   = spaces.Box(action_low_bounds, action_high_bounds, dtype=np.float32)
-        print("END INIT")
+        #print("END INIT")
             
     def step(self, action):
         try:
-            print("STEP")
+            #print("STEP")
             # sending actions
             str_action = GamaEnv.action_to_string(np.array(action))
-            print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
+            #print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
             self.gama_simulation_as_file.write(str_action)
             self.gama_simulation_as_file.flush()
-            print("model sent policy, now waiting for reward")
+            #print("model sent policy, now waiting for reward")
             # we wait for the reward
             policy_reward = self.gama_simulation_as_file.readline()
             self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is strange
             
             reward = float(policy_reward)
 
-            print("model received reward:", policy_reward, " as a float: ", reward)
+            #print("model received reward:", policy_reward, " as a float: ", reward)
             self.state, end = self.read_observations()
-            print("observations received", self.state, end)
+            #print("observations received", self.state, end)
             # If it was the final step, we need to send a message back to the simulation once everything done to acknowledge that it can now close
             if end:
                 self.gama_simulation_as_file.write("END\n")
@@ -85,20 +85,20 @@ class GamaEnv(gym.Env):
             print("EXCEPTION pendant l'execution")
             print(sys.exc_info()[0])
             sys.exit(-1)
-        print("END STEP")
+        #print("END STEP")
         return np.array(self.state, dtype=np.float32), reward, end, {} 
 
     # Must reset the simulation to its initial state
     # Should return the initial observations
     def reset(self,*,seed: Optional[int] = None,return_info: bool = False,options: Optional[dict] = None ): 
-        print("RESET")
-        print("self.gama_simulation_as_file", self.gama_simulation_as_file)
-        print("self.gama_simulation_connection",
-              self.gama_simulation_connection)
+        #print("RESET")
+        #print("self.gama_simulation_as_file", self.gama_simulation_as_file)
+        #print("self.gama_simulation_connection",
+        #      self.gama_simulation_connection)
         #Check if the environment terminated 
         if self.gama_simulation_connection is not None:
-            print("self.gama_simulation_connection.fileno()",
-                  self.gama_simulation_connection.fileno())
+            #print("self.gama_simulation_connection.fileno()",
+            #      self.gama_simulation_connection.fileno())
             if self.gama_simulation_connection.fileno() != -1:
                 self.gama_simulation_connection.shutdown(socket.SHUT_RDWR)
                 self.gama_simulation_connection.close()
@@ -114,9 +114,9 @@ class GamaEnv(gym.Env):
         self.wait_for_gama_to_connect()
         self.state, end = self.read_observations()
         print('\t','setting up gama', time.time()-tic_setting_gama)
-        print('after reset self.state', self.state)
-        print('after reset end', end)
-        print("END RESET")
+        #print('after reset self.state', self.state)
+        #print('after reset end', end)
+        #print("END RESET")
         if not return_info:
             return np.array(self.state, dtype=np.float32)
         else:
@@ -196,7 +196,7 @@ class GamaEnv(gym.Env):
     def read_observations(self):
 
         received_observations: str = self.gama_simulation_as_file.readline()
-        print("model received:", received_observations)
+        #print("model received:", received_observations)
         self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is marvelous
 
         over = "END" in received_observations
