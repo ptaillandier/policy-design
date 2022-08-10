@@ -111,7 +111,7 @@ activation_function = tf.tanh
 if args.activation == "relu":
     activation_function = "relu"
 elif args.activation == "tanh":
-    activation_fuction = tf.tanh
+    activation_function = tf.tanh
 
 ### End configuration variables ###
 ### Start configuration specific ppo variables ###
@@ -153,7 +153,7 @@ layers_sizes.append(n_dimensions*3) #Add the last output layer considering  dime
 # 3. Remaining time before ending the simulation - Unit (in seconds)
 
 n_observations  = 3     # Number of observations from the state of the social planner, can be modified for testing
-n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon:     5 years) 
+#n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon:     5 years) 
 
 # Rewards
 # 1. Evolution of the intention of adoption (mean_intention - previous_mean_intention) / previous_mean_intention)
@@ -162,82 +162,6 @@ CRITICMODELPATH             = 'critic_nngamma' # Path to the file where to store
 results2_filepath           = 'results_number_adopters.csv'
 results3_filepath           = 'results_actions.csv'
 results4_filepath           = 'results_nnoutputs.csv'
-
-# The loop of interaction between the gama simulation and the model
-def gama_interaction_loop(gama_simulation: socket, episode: utils.Episode) -> None:
-
-    global results3_filepath    
-    global actor_model
-    policy_manager: Policy = Policy(actor_model)
-    gama_socket_as_file: TextIO[IO[str]] = gama_simulation.makefile(mode='rw')
-
-    try:
-        n_times_4_action = 10 # Number of times in which the policy maker can change the public policy (time horizon: 5 years)
-        time_updating_policy = 0
-        time_simulation = 0
-        i_experience = 0
-        last_obs = -1
-        while True:
-           # we wait for the simulation to send the observations
-           #print("waiting for observations")
-           tic_b = time.time()
-           received_observations: str = gama_socket_as_file.readline()
-           time_simulation = time_simulation + time.time()-tic_b
-           if "END\n" in received_observations:
-               last_obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations.replace("END", ""))
-               last_obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
-               episode.set_last_observation(last_obs)
-               break
-
-           print("model received:", received_observations)
-           obs: npt.NDArray[np.float64] = gamainteraction.string_to_nparray(received_observations)
-           obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times that remain for changing the policy
-            
-           # we then compute a policy and send it back to gama
-           tic_b = time.time()
-           action, action_env, nn_outputs = gamainteraction.process_observations(policy_manager, obs, n_actions)
-           time_updating_policy = time_updating_policy + time.time() - tic_b
-
-           #store in the result file the outputs of the nn 
-           with open(results4_filepath, 'a') as f:
-               f.write(str(episode.id)+','+str(i_experience)+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output) for output in nn_outputs])+'\n')
-
-           str_action = gamainteraction.action_to_string(np.array(action_env))
-           #store in the result file the actions taken
-           with open(results3_filepath, 'a') as f:
-               f.write(str(episode.id)+','+str(i_experience)+','+ str_action)
-
-           print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
-           gama_socket_as_file.write(str_action)
-           gama_socket_as_file.flush()
-
-           tic_b = time.time()
-           # we finally wait for the reward
-           #print("The model is waiting for the reward")
-           policy_reward = gama_socket_as_file.readline()
-           time_simulation = time_simulation + time.time() - tic_b
-           print("model received reward:", policy_reward)
-               
-           gamainteraction.process_reward(policy_reward, action_env, received_observations)
-           episode.add_experience(obs, action, float(policy_reward))
-           i_experience = i_experience + 1
-           # new line for better understanding of the logs
-           #print()
-    except ConnectionResetError:
-       print("connection reset, end of simulation")
-    except:
-        print("EXCEPTION pendant l'execution")
-        print(sys.exc_info()[0])
-        sys.exit(-1)
-
-    gama_socket_as_file.write("over\n") #we send a message for the simulation to wait before closing
-    gama_socket_as_file.flush()
-      
-    print('\t','updating policy time', time_updating_policy)
-    print('\t','simulation time', time_simulation)
-    
-    return episode
-
 
 
 if __name__ == "__main__":
@@ -301,7 +225,7 @@ if __name__ == "__main__":
             tic_b = time.time()
             obs = env.reset()
             time_simulation = time_simulation + time.time()-tic_b
-            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times tha    t remain for changing the     policy
+            #obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times tha    t remain for changing the     policy
             print("model initially received:", obs)
             done = False
             while not done:
@@ -311,7 +235,7 @@ if __name__ == "__main__":
                 time_updating_policy = time_updating_policy + time.time() - tic_b
                 #store in the result file the outputs of the nn
                 with open(results4_filepath, 'a') as f:
-                    f.write(str(episode.id)+','+str(i_experience)+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output)
+                    f.write(str(episode.id)+','+str(obs[2])+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output)
                                                                                                                 for
                                                                                                                 output
                                                                                                                 in
@@ -319,12 +243,14 @@ if __name__ == "__main__":
                 str_action = ",".join([str(action) for action in action_env]) + "\n"
                 #store in the result file the actions taken
                 with open(results3_filepath, 'a') as f:
-                    f.write(str(episode.id)+','+str(i_experience)+','+ str_action)
+                    f.write(str(episode.id)+','+str(obs[2])+','+ str_action)
                 print("model sending policy:(thetaeconomy,thetamanagement,fmanagement,thetaenvironment,fenvironment)",str_action)
                 tic_b = time.time()
                 next_obs, reward, done, info = env.step(action_env)
                 time_simulation = time_simulation + time.time() - tic_b
                 print("model received reward:", reward)
+                print("model received:", next_obs)
+
                 episode.add_experience(obs, action, float(reward))
                 obs = next_obs
                 i_experience = i_experience + 1
