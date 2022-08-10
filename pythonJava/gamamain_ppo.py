@@ -51,7 +51,7 @@ parser.add_argument(
 parser.add_argument(
     "--discount-factor",
     type=float,
-    default=0.99,
+    default=0.999,
     help="Discount factor for the reinforcement learning",
 )
 
