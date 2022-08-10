@@ -53,26 +53,27 @@ species institution_tcp parent: institution skills:[network] {
 	bool at_least_one_policy;
 	
 	action other_things_init {
-        write "other_things_init";
+        	//write "other_things_init";
 		at_least_one_policy		<- false;
-		write "port " + port;
+		//write "port " + port;
 		do connect to:"localhost" port:port protocol:"tcp_client" raw:true;
 		//do send_observations; //Initial observations sending for gym
-		write "END other_things_init";
+		//write "END other_things_init";
 	}
 	action thing_before_policy_selecting {
 		//Sending the reward for the last policy choice
-		write "send_reward";
+		//write "send_reward";
 		do send_reward;
-		write "END send_reward";
-		write "send_observations";
+		//write "END send_reward";
+		//write "send_observations";
 		do send_observations;
-		write "END send_observations";
+		//write "END send_observations";
 	}
 
 	action send_end {
 	        //budget restant, nb d'adoptant/taux, temps restant
-		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
+		//let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
+		let observations <- "(" + budget + "," + adoption_rate + "," + num_policy_selected + ")" ;
 		do send to:"localhost:" + port contents:observations+"END";
 		
 //		let sent 	<- send(server, observations+"END\n");
@@ -108,7 +109,9 @@ species institution_tcp parent: institution skills:[network] {
 
 	action send_observations {
 		//budget restant, nb d'adoptant/taux, temps restant
-		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
+		//let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
+		//budget restant, nb d'adoptant/taux, ntimesselectedpolicy
+		let observations <- "(" + budget + "," + adoption_rate + "," + num_policy_selected + ")" ;
 		do send to:"localhost:"+port contents:observations;
 		//let sent <-  send(server, observations);
 		//if(!sent) {
@@ -122,7 +125,7 @@ species institution_tcp parent: institution skills:[network] {
 	}
 	
 	message wait_next_message {
-		write "waiting for server to send data"; 
+		//write "waiting for server to send data"; 
 		loop while: !has_more_message()  { 
 			do fetch_message_from_network;
 		}
@@ -130,14 +133,14 @@ species institution_tcp parent: institution skills:[network] {
 	}
 	
 	action select_actions {
-		write "select_actions";
+		//write "select_actions";
 		//Getting the actions from the server
 		let msg <- wait_next_message();
-		write "received " + msg;
+		//write "received " + msg;
 				
 		if(msg != nil) {
 			string actions_msg <- msg.contents;
-			write "actions_msg" + actions_msg;
+			//write "actions_msg" + actions_msg;
 			let actions 	<- replace(replace(actions_msg, "[", ""), "]","") split_with ",";
 			let fin_support	<- float(actions[0]);
 			let training_l	<- float(actions[1]);
@@ -145,7 +148,7 @@ species institution_tcp parent: institution skills:[network] {
 			let envr_l		<- float(actions[3]);
 			let envr_p		<- float(actions[4]);
 
-			write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
+			//write actions_msg + " : " + fin_support + " " + training_l +","+training_p + " " + envr_l + "," + envr_p;
 			
 			
 			do financial_support(fin_support);

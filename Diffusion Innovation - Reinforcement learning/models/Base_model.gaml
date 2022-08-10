@@ -233,6 +233,7 @@ species institution {
 	int previous_adopters_nb;
 	float previous_mean_intention;
 	float previous_adoption_rate;
+	int num_policy_selected;
 	
 	action other_things_init {
 	}
@@ -243,6 +244,7 @@ species institution {
 		previous_adopters_nb <- 0;
 		previous_mean_intention <- 0.0;
 		previous_adoption_rate <- 0.0;
+		num_policy_selected <- 0;
 		do other_things_init;
 		write "END initialize";
 		
@@ -254,6 +256,7 @@ species institution {
 		loop topic over: topics {
 			support[topic] <- 0.0;
 		}
+		num_policy_selected <- num_policy_selected + 1;
 		do select_actions ;
 	}
 	
