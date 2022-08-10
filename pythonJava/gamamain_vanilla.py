@@ -56,6 +56,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--activation",
+    type=str,
+    default="tanh",
+    help="Activation function descriptor for hidden layers. Supported values are: tanh or relu",
+)
+
+parser.add_argument(
     "--sizes",
     type=int,
     nargs = "+",
@@ -71,6 +78,12 @@ discount_factor = args.discount_factor
 learning_rate = args.learning_rate
 epsilon = args.epsilon
 layers_sizes = args.sizes 
+activation_function = tf.tanh
+if args.activation == "relu":
+    activation_function = "relu"
+elif args.activation == "tanh":
+    activation_function = tf.tanh
+
 ### End configuration variables ###
 n_episodes = max_training_iters*batch_size #The total number of episodes explored will be the number of iterations for the training par the size of batch examples processed on each training
 print("Total number of episodes =", n_episodes)
@@ -138,7 +151,8 @@ if __name__ == "__main__":
     with open(results4_filepath, 'a') as f:
           f.write('iteration,decision_step,budget_obs,fadopters_obs,cman,cenv,cleft,mean_thetaeco,mean_thetaman,mean_thetaenv,std_thetaeco,std_thetaman,std_thetaenv\n')
 
-    model = utils.mlp(n_observations, layers_sizes)
+    model = utils.mlp(n_observations, layers_sizes, activation =
+            activation_function, last_layer_scaling=0.01)
     print('model.summary()', model.summary())
     utils.full_summary(model)
     policy_manager: Policy = Policy(model)
