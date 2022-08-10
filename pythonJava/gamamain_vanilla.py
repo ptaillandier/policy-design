@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     model = utils.mlp(n_observations, layers_sizes, activation =
             activation_function, last_layer_scaling=0.01)
-    print('model.summary()', model.summary())
+    print('model.summary()')
     utils.full_summary(model)
     policy_manager: Policy = Policy(model)
     print('max_training_iters', max_training_iters)
