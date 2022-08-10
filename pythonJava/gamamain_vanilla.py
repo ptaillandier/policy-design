@@ -21,7 +21,7 @@ session = tf.compat.v1.Session(config=config)
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
-    "--iters",
+    "--num-iters",
     type=int,
     default=3,
     help="Number of iterations.",
@@ -72,7 +72,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 ### Start configuration variables ###
-max_training_iters = args.iters # Number of training iterations (times that we run training)
+max_training_iters = args.num_iters # Number of training iterations (times that we run training)
 batch_size = args.num_batch_episodes
 discount_factor = args.discount_factor
 learning_rate = args.learning_rate
@@ -187,7 +187,7 @@ if __name__ == "__main__":
                 str_action = ",".join([str(action) for action in action_env]) + "\n" 
                 #store in the result file the actions taken
                 with open(results3_filepath, 'a') as f:
-                    f.write(str(episode.id)+','+str(i_experience)+','+ str_action)
+                    f.write(str(episode.id)+','+str(obs[2])+','+ str_action)
  
                 print("model sending policy:(thetaeconomy,thetamanagement,fmanagement,thetaenvironment,fenvironment)",str_action)
                 tic_b = time.time()
