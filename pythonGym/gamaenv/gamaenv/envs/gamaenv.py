@@ -1,3 +1,7 @@
+import shlex
+import subprocess
+from subprocess import CompletedProcess
+
 import gym
 import time
 import os
@@ -8,6 +12,8 @@ import numpy as np
 import numpy.typing as npt
 from typing import Optional
 from gym import spaces
+from ray.thirdparty_files import psutil
+
 
 class GamaEnv(gym.Env):
 
@@ -23,7 +29,8 @@ class GamaEnv(gym.Env):
     max_episode_steps:  int     = 11
 
     # Simulation execution variables
-    gama_socket = None
+    gama_pid: int               = -1 # The pid of the command running gama
+    gama_socket                 = None
     gama_simulation_as_file     = None # For some reason the typing doesn't work
     gama_simulation_connection  = None # Resulting from socket create connection
     def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiment_path: str, gaml_experiment_name: str):
@@ -108,6 +115,9 @@ class GamaEnv(gym.Env):
             self.gama_simulation_as_file.close()
             self.gama_simulation_as_file = None
 
+        self.clean_subprocesses()
+
+
         tic_setting_gama = time.time()
         # Starts gama and get initial state
         self.run_gama_simulation()
@@ -125,12 +135,21 @@ class GamaEnv(gym.Env):
         # OLD
         #self.steps_before_done = self.n_execution_steps
 
+    def clean_subprocesses(self):
+        if self.gama_pid > 0:
+            parent = psutil.Process(self.gama_pid)
+            for child in parent.children(recursive=True):  # or parent.children() for recursive=False
+                child.kill()
+            parent.kill()
+
+    def __del__(self):
+        self.clean_subprocesses()
 
     # Init the server + run gama
     def run_gama_simulation(self):
         port = self.listener_init()
         xml_path = GamaEnv.generate_gama_xml(self.headless_dir, port, self.gaml_file_path, self.experiment_name)
-        start_new_thread(GamaEnv.run_gama_headless, (xml_path, self.headless_dir, self.run_headless_script_path))
+        self.thread_id = start_new_thread(GamaEnv.run_gama_headless, (self, xml_path, self.headless_dir, self.run_headless_script_path))
 
     # Generates an XML file that can be used to run gama in headless mode, listener_port is used as a parameter of
     # the simulation to communicate through tcp
@@ -173,11 +192,13 @@ class GamaEnv(gym.Env):
         return port
 
     # Runs gama simulations in headless mode following the description of the xml file
-    @classmethod
-    def run_gama_headless(cls, xml_file_path: str, headless_dir: str, gama_headless_script_path: str) -> int:
+    def run_gama_headless(self, xml_file_path: str, headless_dir: str, gama_headless_script_path: str) -> int:
         cmd = f"cd \"{headless_dir}\" && \"{gama_headless_script_path}\" \"{xml_file_path}\" out"
         print("running gama with command: ", cmd)
-        return os.system(cmd)
+        #cmd_to_args = shlex.split(cmd)
+        res = subprocess.Popen(cmd, shell=True)
+        self.gama_pid = res.pid
+        return res.returncode
   
     # Connect with the current running gama simulation
     def wait_for_gama_to_connect(self):
