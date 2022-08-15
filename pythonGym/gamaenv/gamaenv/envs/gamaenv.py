@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 
 import gym
 import time
@@ -11,6 +12,7 @@ import numpy.typing as npt
 from typing import Optional
 from gym import spaces
 import websockets
+from ray.thirdparty_files import psutil
 
 from gamaenv.envs.GamaServerHandler import GamaServerHandler
 
@@ -27,24 +29,34 @@ class GamaEnv(gym.Env):
 
     # ENVIRONMENT CONSTANTS
     max_episode_steps:  int     = 11
-    gama_server_port: int       = 6868
 
     # Gama-server control variables
+    gama_server_url: str                    = ""
+    gama_server_port: int                   = -1
     gama_server_handler: GamaServerHandler  = None
     gama_server_sock_id: str                = ""# represents the current socket used to communicate with gama-server
     gama_server_exp_id: str                 = ""# represents the current experiment being manipulated by gama-server
     gama_server_connected: asyncio.Event    = None
+    gama_server_event_loop                  = None
+    gama_server_pid: int                    = -1
 
     # Simulation execution variables
     gama_socket                 = None
     gama_simulation_as_file     = None # For some reason the typing doesn't work
     gama_simulation_connection  = None # Resulting from socket create connection
-    def __init__(self, headless_directory: str, headless_script_path: str, gaml_experiment_path: str, gaml_experiment_name: str):
+    def __init__(self,  headless_directory: str,
+                        headless_script_path: str,
+                        gaml_experiment_path: str,
+                        gaml_experiment_name: str,
+                        gama_server_url: str = "localhost",
+                        gama_server_port:int = 6868):
 
         self.headless_dir               = headless_directory
         self.run_headless_script_path   = headless_script_path
         self.gaml_file_path             = gaml_experiment_path
         self.experiment_name            = gaml_experiment_name
+        self.gama_server_url            = gama_server_url
+        self.gama_server_port           = gama_server_port
 
         print("INIT")
         # OBSERVATION SPACE:
@@ -64,29 +76,37 @@ class GamaEnv(gym.Env):
         action_low_bounds   = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
         self.action_space   = spaces.Box(action_low_bounds, action_high_bounds, dtype=np.float32)
 
+        # setting an event loop for the parallel processes
+        self.gama_server_event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.gama_server_event_loop)
         self.gama_server_connected = asyncio.Event()
 
         self.init_gama_server()
 
         print("END INIT")
 
-    async def init_gama_server(self):
-
-        # Run gama server from the filesystem
+    def run_gama_server(self):
         cmd = f"cd \"{self.headless_dir}\" && \"{self.run_headless_script_path}\" -socket {self.gama_server_port}"
         print("running gama headless with command: ", cmd)
-        start_new_thread(os.system, (cmd,))
+        server = subprocess.Popen(cmd, shell=True)
+        self.gama_server_pid = server.pid
+        print("gama server pid:", self.gama_server_pid)
+
+    def init_gama_server(self):
+
+        # Run gama server from the filesystem
+        start_new_thread(self.run_gama_server, ( ))
 
         # try to connect to gama-server
-        self.gama_server_handler = GamaServerHandler("localhost", self.gama_server_port)
+        self.gama_server_handler = GamaServerHandler(self.gama_server_url, self.gama_server_port)
         self.gama_server_sock_id = ""
         for i in range(30):
             try:
-                await asyncio.sleep(2)
+                self.gama_server_event_loop.run_until_complete(asyncio.sleep(2))
                 print("try to connect")
-                self.gama_server_sock_id = await self.gama_server_handler.connect()
+                self.gama_server_sock_id = self.gama_server_event_loop.run_until_complete(self.gama_server_handler.connect())
                 if self.gama_server_sock_id != "":
-                    print("connection successful")
+                    print("connection successful", self.gama_server_sock_id)
                     break
             except:
                 print("Connection failed")
@@ -96,8 +116,6 @@ class GamaEnv(gym.Env):
             sys.exit(-1)
 
         self.gama_server_connected.set()
-
-
 
     def step(self, action):
         try:
@@ -137,7 +155,7 @@ class GamaEnv(gym.Env):
 
     # Must reset the simulation to its initial state
     # Should return the initial observations
-    def reset(self, *, seed: Optional[int] = None,return_info: bool = False,options: Optional[dict] = None ):
+    def reset(self, *, seed: Optional[int] = None, return_info: bool = False, options: Optional[dict] = None ):
         print("RESET")
         print("self.gama_simulation_as_file", self.gama_simulation_as_file)
         print("self.gama_simulation_connection",
@@ -155,10 +173,13 @@ class GamaEnv(gym.Env):
             self.gama_simulation_as_file.close()
             self.gama_simulation_as_file = None
 
+        #self.clean_subprocesses()
+
         tic_setting_gama = time.time()
 
         # Starts the simulation and get initial state
-        self.run_gama_simulation()
+        print(self.gama_server_sock_id, self.gama_server_handler, self.gama_server_handler.socket)
+        self.gama_server_event_loop.run_until_complete(self.run_gama_simulation())
 
         self.wait_for_gama_to_connect()
 
@@ -174,9 +195,18 @@ class GamaEnv(gym.Env):
      
         # OLD
         #self.steps_before_done = self.n_execution_steps
+    def clean_subprocesses(self):
+        if self.gama_server_pid > 0:
+            parent = psutil.Process(self.gama_server_pid)
+            for child in parent.children(recursive=True):  # or parent.children() for recursive=False
+                child.kill()
+            parent.kill()
+
+    def __del__(self):
+        self.clean_subprocesses()
 
     # Init the server + run gama
-    def run_gama_simulation(self):
+    async def run_gama_simulation(self):
 
         #waiting for the gama_server websocket to be initialized
         await self.gama_server_connected.wait()
@@ -186,10 +216,15 @@ class GamaEnv(gym.Env):
 
         # initialize the experiment
         print("asking gama-server to start the experiment")
-        self.gama_server_exp_id = asyncio.run(self.gama_server_handler.init_experiment(   self.gaml_file_path,
+        self.gama_server_exp_id = await self.gama_server_handler.init_experiment(   self.gaml_file_path,
                                                                                     self.experiment_name,
                                                                                     self.gama_server_sock_id,
-                                                                                    params=[("port", sim_port)]))
+                                                                                    params=[
+                                                                                            {   "type": "int",
+                                                                                                "name": "port",
+                                                                                                "value": sim_port
+                                                                                            }
+                                                                                    ])
         if self.gama_server_exp_id == "" or self.gama_server_exp_id is None:
             print("Unable to initialize the experiment")
             sys.exit(-1)

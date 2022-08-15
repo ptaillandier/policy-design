@@ -22,7 +22,7 @@ global {
 	/*  ******* ACTIONS **********/
 
 	action simulation_ending  {
-		//write "ending simulation";
+		write "ending simulation";
 		ask institution_tcp {
 			//write "simulation sending last reward";
 			do send_reward;
@@ -72,6 +72,7 @@ species institution_tcp parent: institution skills:[network] {
 
 	action send_end {
 	        //budget restant, nb d'adoptant/taux, temps restant
+		write "send_end";
 		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
 		do send to:"localhost:" + port contents:observations+"END";
 		
@@ -85,10 +86,12 @@ species institution_tcp parent: institution skills:[network] {
 	}	
 
 	action send_reward {
+		write "send_reward";
 		if(at_least_one_policy) {
 			//The reward = increment on percentage of new adopters
 			//float reward 	<- previous_mean_intention != 0 ? (mean_intention - previous_mean_intention)/ previous_mean_intention : mean_intention ;
 			let reward 	<- (adopters_nb - previous_adopters_nb)/number_farmers;
+			write reward;
 			do send to:"localhost:" + port contents:reward;
 //			bool sent 	<- send(server, string(reward) + "\n");
 //			if (! sent) {
@@ -109,6 +112,7 @@ species institution_tcp parent: institution skills:[network] {
 	action send_observations {
 		//budget restant, nb d'adoptant/taux, temps restant
 		let observations <- "(" + budget + "," + adoption_rate + "," + (end_simulation_after - time) + ")" ;
+		write "sending observations: " + observations;
 		do send to:"localhost:"+port contents:observations;
 		//let sent <-  send(server, observations);
 		//if(!sent) {

@@ -3,6 +3,8 @@ import json
 import websockets
 import asyncio
 
+from typing import List, Dict
+
 
 class GamaServerHandler:
 
@@ -48,11 +50,11 @@ class GamaServerHandler:
 									socket_id: str = "", exp_id: str = "", end_condition: str = "", params=None):
 		cmd = self.create_gama_command(command_type, gaml_file_path, experiment_name, socket_id, exp_id, end_condition, params)
 		cmd_to_str = json.dumps(cmd, indent=0)
-		print("sending", cmd_to_str)
+		print("sending", cmd_to_str, self.socket)
 		await self.socket.send(cmd_to_str)
 
 	async def send_command_return(self, command_type: str, gaml_file_path: str = "", experiment_name: str = "",
-									socket_id: str = "", exp_id: str = "", end_condition: str = "", params=None, unpack_json=False):
+									socket_id: str = "", exp_id: str = "", end_condition: str = "", params: List[Dict] = None, unpack_json=False):
 		await self.send_command(command_type, gaml_file_path, experiment_name, socket_id, exp_id, end_condition, params)
 		res = await self.socket.recv()
 		print("received back", res)
@@ -61,7 +63,7 @@ class GamaServerHandler:
 		return res
 
 	# Load the experiment "experiment_name" in the file "gaml_file_path" through the socket "socket_id" and returns the experiment's id
-	async def init_experiment(self, gaml_file_path: str, experiment_name: str, socket_id: str,params: list = [], callback=None) -> str:
+	async def init_experiment(self, gaml_file_path: str, experiment_name: str, socket_id: str, params: List[Dict] = [{}], callback = None) -> str:
 		res = await self.send_command_return("launch",
 											 gaml_file_path=gaml_file_path,
 											 experiment_name=experiment_name,
@@ -95,12 +97,13 @@ class GamaServerHandler:
 		return res == "stop"
 
 async def tests():
-	h = GamaServerHandler("localhost", 8686)
+	h = GamaServerHandler("localhost", 6868)
 	socket_id = await h.connect()
 	print(socket_id)
-	exp_id = await h.init_experiment(	r"/home/baptiste/gama/configuration/org.eclipse.osgi/217/0/.cp/models/Tutorials/Predator Prey/models/Model 03.gaml",
-										"prey_predator",
-										socket_id)
+	exp_id = await h.init_experiment(	r"/home/baptiste/Documents/GitHub/new-policy-design/Diffusion Innovation - Reinforcement learning/models/TCP_model_env_rc2.gaml",
+										"one_simulation",
+										socket_id,
+										 [{"type": "int", "name" : "port", "value": 1234}])
 	await h.play(socket_id, exp_id)
 	#print(await h.send_command_return("nonsense", socket_id, exp_id))
 	await h.pause(socket_id, exp_id)
