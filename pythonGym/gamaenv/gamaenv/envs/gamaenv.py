@@ -87,10 +87,10 @@ class GamaEnv(gym.Env):
 
     def run_gama_server(self):
         cmd = f"cd \"{self.headless_dir}\" && \"{self.run_headless_script_path}\" -socket {self.gama_server_port}"
-        print("running gama headless with command: ", cmd)
-        server = subprocess.Popen(cmd, shell=True)
-        self.gama_server_pid = server.pid
-        print("gama server pid:", self.gama_server_pid)
+        # print("running gama headless with command: ", cmd)
+        # server = subprocess.Popen(cmd, shell=True)
+        # self.gama_server_pid = server.pid
+        # print("gama server pid:", self.gama_server_pid)
 
     def init_gama_server(self):
 
@@ -121,14 +121,16 @@ class GamaEnv(gym.Env):
         try:
             print("STEP")
             # sending actions
-            str_action = GamaEnv.action_to_string(np.array(action))
+            str_action = GamaEnv.action_to_string(np.array(action)) + "\n"
             print("model sending policy:(thetaeconomy ,thetamanagement,fmanagement,thetaenvironment,fenvironment)", str_action)
+            print(self.gama_simulation_connection)
+
             self.gama_simulation_as_file.write(str_action)
             self.gama_simulation_as_file.flush()
             print("model sent policy, now waiting for reward")
             # we wait for the reward
             policy_reward = self.gama_simulation_as_file.readline()
-            self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is strange
+            # self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is strange
             
             reward = float(policy_reward)
 
@@ -172,7 +174,7 @@ class GamaEnv(gym.Env):
         if self.gama_simulation_as_file is not None:
             self.gama_simulation_as_file.close()
             self.gama_simulation_as_file = None
-
+        #TODO: stop simulation if any
         #self.clean_subprocesses()
 
         tic_setting_gama = time.time()
@@ -220,44 +222,19 @@ class GamaEnv(gym.Env):
                                                                                     self.experiment_name,
                                                                                     self.gama_server_sock_id,
                                                                                     params=[
-                                                                                            {   "type": "int",
+                                                                                            {
+                                                                                                "type": "int",
                                                                                                 "name": "port",
                                                                                                 "value": sim_port
                                                                                             }
                                                                                     ])
         if self.gama_server_exp_id == "" or self.gama_server_exp_id is None:
-            print("Unable to initialize the experiment")
+            print("Unable to compile or initialize the experiment")
             sys.exit(-1)
 
-        #await self.gama_server_handler.reload(self.gama_server_sock_id, self.gama_server_exp_id, params=[("port",sim_port)])
-        #xml_path = GamaEnv.generate_gama_xml(self.headless_dir, port, self.gaml_file_path, self.experiment_name)
-        #start_new_thread(GamaEnv.run_gama_headless, (sim_port, self.headless_dir, self.run_headless_script_path))
-
-
-    # Generates an XML file that can be used to run gama in headless mode, listener_port is used as a parameter of
-    # the simulation to communicate through tcp
-    # returns the path of the XML
-    # @classmethod
-    # def generate_gama_xml(cls, headless_dir: str, listener_port: int, gaml_experiment_path: str, experiment_name: str) -> str:
-    #     # TODO: ajouter nb de simulations dans le xml
-    #
-    #     sim_file_path = os.path.join(headless_dir, "tmp_sim.xml")
-    #     sim_file = open(sim_file_path, "w+")
-    #
-    #     #We fill the file with the appropriate xml needed to run the gama experiment
-    #     sim_file.write(f"""<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>
-    #     <Experiment_plan>
-    #         <Simulation id=\"2\" sourcePath=\"{gaml_experiment_path}\" experiment=\"{experiment_name}\" seed="0">
-    #             <Parameters>
-    #                 <Parameter name=\"port\" type=\"INT\" value=\"{listener_port}\"/>
-    #             </Parameters>
-    #             <Outputs />
-    #         </Simulation>
-    #     </Experiment_plan>""")
-    #
-    #     sim_file.close()
-    #
-    #     return sim_file_path
+        if not await self.gama_server_handler.play(self.gama_server_sock_id, self.gama_server_exp_id):
+            print("Unable to run the experiment")
+            sys.exit(-1)
 
     # Initialize the socket to communicate with gama
     def init_server_simulation_control(self) -> int:
@@ -273,17 +250,6 @@ class GamaEnv(gym.Env):
 
         self.gama_socket = s
         return port
-
-    # Runs gama simulations in headless mode following the description of the xml file
-    # @classmethod
-    # def run_simulation(cls, port: int, headless_dir: str, gama_headless_script_path: str) -> int:
-    #     self.gama_server_socket.send()
-    # def run_gama_headless(cls, port: int , headless_dir: str, gama_headless_script_path: str) -> int:
-    #     """xml_file_path: str"""
-    #     # cmd = f"cd \"{headless_dir}\" && \"{gama_headless_script_path}\" \"{xml_file_path}\" out"
-    #     cmd = f"cd \"{headless_dir}\" && \"{gama_headless_script_path}\" -socket {port}"
-    #     print("running gama with command: ", cmd)
-    #     return os.system(cmd)
   
     # Connect with the current running gama simulation
     def wait_for_gama_to_connect(self):
@@ -292,18 +258,18 @@ class GamaEnv(gym.Env):
         self.gama_simulation_connection, addr = self.gama_socket.accept()
         print("gama connected:", self.gama_simulation_connection, addr)
         self.gama_simulation_as_file = self.gama_simulation_connection.makefile(mode='rw')
-        print("self.gama_simulation_as_file", self.gama_simulation_as_file)
-        print("reading lines because gama connection is strange")
-        print("line:", self.gama_simulation_as_file.readline())
-        print("line:", self.gama_simulation_as_file.readline())
-        print("line:", self.gama_simulation_as_file.readline())
-        print("line:", self.gama_simulation_as_file.readline())
+        # print("self.gama_simulation_as_file", self.gama_simulation_as_file)
+        # print("reading lines because gama connection is strange")
+        # print("line:", self.gama_simulation_as_file.readline())
+        # print("line:", self.gama_simulation_as_file.readline())
+        # print("line:", self.gama_simulation_as_file.readline())
+        # print("line:", self.gama_simulation_as_file.readline())
 
     def read_observations(self):
 
         received_observations: str = self.gama_simulation_as_file.readline()
         print("model received:", received_observations)
-        self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is marvelous
+        # self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is marvelous
 
         over = "END" in received_observations
         obs  = GamaEnv.string_to_nparray(received_observations.replace("END", ""))

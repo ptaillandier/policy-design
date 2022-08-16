@@ -63,7 +63,7 @@ class GamaServerHandler:
 		return res
 
 	# Load the experiment "experiment_name" in the file "gaml_file_path" through the socket "socket_id" and returns the experiment's id
-	async def init_experiment(self, gaml_file_path: str, experiment_name: str, socket_id: str, params: List[Dict] = [{}], callback = None) -> str:
+	async def init_experiment(self, gaml_file_path: str, experiment_name: str, socket_id: str, params: List[Dict] = None, callback = None) -> str:
 		res = await self.send_command_return("launch",
 											 gaml_file_path=gaml_file_path,
 											 experiment_name=experiment_name,

@@ -233,27 +233,31 @@ species institution {
 	int previous_adopters_nb;
 	float previous_mean_intention;
 	float previous_adoption_rate;
+	int num_policy_selected;
 	
 	action other_things_init {
 	}
 	action initialize {
-	        write "initialize";
+	       // write "initialize";
 		support <- [];
 		budget <- 0.0;
 		previous_adopters_nb <- 0;
 		previous_mean_intention <- 0.0;
 		previous_adoption_rate <- 0.0;
+		num_policy_selected <- 0;
 		do other_things_init;
-		write "END initialize";
+		//write "END initialize";
 		
 	}
 	action thing_before_policy_selecting;
 	
 	action select_policy {
+		write "select_policy " + cycle;
 		do thing_before_policy_selecting;
 		loop topic over: topics {
 			support[topic] <- 0.0;
 		}
+		num_policy_selected <- num_policy_selected + 1;
 		do select_actions ;
 	}
 	
