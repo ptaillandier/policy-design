@@ -32,7 +32,10 @@ class TestGamaGymEnv(unittest.TestCase):
                         headless_directory      = lv.headless_dir,
                         headless_script_path    = lv.run_headless_script_path,
                         gaml_experiment_path    = lv.gaml_file_path,
-                        gaml_experiment_name    = lv.experiment_name)
+                        gaml_experiment_name    = lv.experiment_name,
+                        gama_server_url         = "localhost",
+                        gama_server_port        = 6868,
+                       )
         print('env._max_episode_steps', env._max_episode_steps)
         n_iters = 1
         done = False

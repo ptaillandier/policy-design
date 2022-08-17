@@ -3,7 +3,6 @@ import subprocess
 
 import gym
 import time
-import os
 import sys
 import socket
 from _thread import *
@@ -11,7 +10,6 @@ import numpy as np
 import numpy.typing as npt
 from typing import Optional
 from gym import spaces
-import websockets
 from ray.thirdparty_files import psutil
 
 from gamaenv.envs.GamaServerHandler import GamaServerHandler
@@ -48,8 +46,9 @@ class GamaEnv(gym.Env):
                         headless_script_path: str,
                         gaml_experiment_path: str,
                         gaml_experiment_name: str,
-                        gama_server_url: str = "localhost",
-                        gama_server_port:int = 6868):
+                        gama_server_url: str,
+                        gama_server_port:int,
+                 ):
 
         self.headless_dir               = headless_directory
         self.run_headless_script_path   = headless_script_path
@@ -87,15 +86,15 @@ class GamaEnv(gym.Env):
 
     def run_gama_server(self):
         cmd = f"cd \"{self.headless_dir}\" && \"{self.run_headless_script_path}\" -socket {self.gama_server_port}"
-        # print("running gama headless with command: ", cmd)
-        # server = subprocess.Popen(cmd, shell=True)
-        # self.gama_server_pid = server.pid
-        # print("gama server pid:", self.gama_server_pid)
+        print("running gama headless with command: ", cmd)
+        server = subprocess.Popen(cmd, shell=True)
+        self.gama_server_pid = server.pid
+        print("gama server pid:", self.gama_server_pid)
 
     def init_gama_server(self):
 
         # Run gama server from the filesystem
-        start_new_thread(self.run_gama_server, ( ))
+        start_new_thread(self.run_gama_server, ())
 
         # try to connect to gama-server
         self.gama_server_handler = GamaServerHandler(self.gama_server_url, self.gama_server_port)
@@ -130,7 +129,6 @@ class GamaEnv(gym.Env):
             print("model sent policy, now waiting for reward")
             # we wait for the reward
             policy_reward = self.gama_simulation_as_file.readline()
-            # self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is strange
             
             reward = float(policy_reward)
 
@@ -174,13 +172,10 @@ class GamaEnv(gym.Env):
         if self.gama_simulation_as_file is not None:
             self.gama_simulation_as_file.close()
             self.gama_simulation_as_file = None
-        #TODO: stop simulation if any
-        #self.clean_subprocesses()
 
         tic_setting_gama = time.time()
 
         # Starts the simulation and get initial state
-        print(self.gama_server_sock_id, self.gama_server_handler, self.gama_server_handler.socket)
         self.gama_server_event_loop.run_until_complete(self.run_gama_simulation())
 
         self.wait_for_gama_to_connect()
@@ -194,9 +189,7 @@ class GamaEnv(gym.Env):
             return np.array(self.state, dtype=np.float32)
         else:
             return np.array(self.state, dtype=np.float32), {}
-     
-        # OLD
-        #self.steps_before_done = self.n_execution_steps
+
     def clean_subprocesses(self):
         if self.gama_server_pid > 0:
             parent = psutil.Process(self.gama_server_pid)
@@ -258,18 +251,11 @@ class GamaEnv(gym.Env):
         self.gama_simulation_connection, addr = self.gama_socket.accept()
         print("gama connected:", self.gama_simulation_connection, addr)
         self.gama_simulation_as_file = self.gama_simulation_connection.makefile(mode='rw')
-        # print("self.gama_simulation_as_file", self.gama_simulation_as_file)
-        # print("reading lines because gama connection is strange")
-        # print("line:", self.gama_simulation_as_file.readline())
-        # print("line:", self.gama_simulation_as_file.readline())
-        # print("line:", self.gama_simulation_as_file.readline())
-        # print("line:", self.gama_simulation_as_file.readline())
 
     def read_observations(self):
 
         received_observations: str = self.gama_simulation_as_file.readline()
         print("model received:", received_observations)
-        # self.gama_simulation_as_file.readline() #TODO: remove, just here because gama is marvelous
 
         over = "END" in received_observations
         obs  = GamaEnv.string_to_nparray(received_observations.replace("END", ""))

@@ -50,20 +50,18 @@ class GamaServerHandler:
 									socket_id: str = "", exp_id: str = "", end_condition: str = "", params=None):
 		cmd = self.create_gama_command(command_type, gaml_file_path, experiment_name, socket_id, exp_id, end_condition, params)
 		cmd_to_str = json.dumps(cmd, indent=0)
-		print("sending", cmd_to_str, self.socket)
 		await self.socket.send(cmd_to_str)
 
 	async def send_command_return(self, command_type: str, gaml_file_path: str = "", experiment_name: str = "",
 									socket_id: str = "", exp_id: str = "", end_condition: str = "", params: List[Dict] = None, unpack_json=False):
 		await self.send_command(command_type, gaml_file_path, experiment_name, socket_id, exp_id, end_condition, params)
 		res = await self.socket.recv()
-		print("received back", res)
 		if unpack_json:
 			res = json.loads(res)
 		return res
 
 	# Load the experiment "experiment_name" in the file "gaml_file_path" through the socket "socket_id" and returns the experiment's id
-	async def init_experiment(self, gaml_file_path: str, experiment_name: str, socket_id: str, params: List[Dict] = None, callback = None) -> str:
+	async def init_experiment(self, gaml_file_path: str, experiment_name: str, socket_id: str, params: List[Dict] = None) -> str:
 		res = await self.send_command_return("launch",
 											 gaml_file_path=gaml_file_path,
 											 experiment_name=experiment_name,
@@ -71,24 +69,21 @@ class GamaServerHandler:
 											 params=params,
 											 unpack_json=True,
 											 )
-		if callback is not None:
-			callback(res)
-
 		return res["exp_id"]
 
-	async def play(self, socket_id: str, experiment_id: str, callback=None) -> bool:
+	async def play(self, socket_id: str, experiment_id: str) -> bool:
 		res = await self.send_command_return("play", socket_id=socket_id, exp_id=experiment_id)
 		return res == "play"
 
-	async def pause(self, socket_id: str, experiment_id: str, callback=None) -> bool:
+	async def pause(self, socket_id: str, experiment_id: str) -> bool:
 		res = await self.send_command_return("pause", socket_id=socket_id, exp_id=experiment_id)
 		return res == "pause"
 
-	async def step(self, socket_id: str, experiment_id: str, callback=None) -> bool:
+	async def step(self, socket_id: str, experiment_id: str) -> bool:
 		res = await self.send_command_return("step", socket_id=socket_id, exp_id=experiment_id)
 		return res == "step"
 
-	async def reload(self, socket_id: str, experiment_id: str, params: list = [], callback=None) -> bool:
+	async def reload(self, socket_id: str, experiment_id: str, params: list = None) -> bool:
 		res = await self.send_command_return("reload", socket_id=socket_id, exp_id=experiment_id, params=params)
 		return res == "reload"
 
@@ -103,7 +98,13 @@ async def tests():
 	exp_id = await h.init_experiment(	r"/home/baptiste/Documents/GitHub/new-policy-design/Diffusion Innovation - Reinforcement learning/models/TCP_model_env_rc2.gaml",
 										"one_simulation",
 										socket_id,
-										 [{"type": "int", "name" : "port", "value": 1234}])
+										 [
+											 {
+											 	"type": "int",
+											 	"name" : "port",
+											 	"value": 1234
+										 	}
+										 ])
 	await h.play(socket_id, exp_id)
 	#print(await h.send_command_return("nonsense", socket_id, exp_id))
 	await h.pause(socket_id, exp_id)
