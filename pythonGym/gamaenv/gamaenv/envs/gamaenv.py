@@ -134,6 +134,8 @@ class GamaEnv(gym.Env):
         #self.steps_before_done = self.n_execution_steps
 
     def clean_subprocesses(self):
+        print("calling clean_subprocesses")
+        print("self.gama_pid", self.gama_pid)
         if self.gama_pid > 0:
             parent = psutil.Process(self.gama_pid)
             for child in parent.children(recursive=True):  # or parent.children() for recursive=False
