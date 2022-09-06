@@ -12,8 +12,7 @@ import numpy as np
 import numpy.typing as npt
 from typing import Optional
 from gym import spaces
-from ray.thirdparty_files import psutil
-
+import psutil
 
 class GamaEnv(gym.Env):
 
@@ -143,6 +142,7 @@ class GamaEnv(gym.Env):
             parent.kill()
 
     def __del__(self):
+        print("calling __del__")
         self.clean_subprocesses()
 
     # Init the server + run gama
