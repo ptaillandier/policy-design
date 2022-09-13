@@ -1,14 +1,15 @@
 # Import the RL algorithm (Trainer) we would like to use.
 from ray.rllib.agents.ppo import PPOTrainer
 from ray.tune.registry import register_env
+import user_local_variables as lv
 
 
 # Configure the algorithm.
-from gamagymenv.envs import GamaGymEnv
+from gamaenv.envs import GamaEnv
 
 config = {
     # Environment (RLlib understands openAI gym registered strings).
-    "env": "GamaGymEnv-v0",
+    "env": "GamaEnv-v0",
     # Use 2 environment workers (aka "rollout workers") that parallely
     # collect samples from their own environment clone(s).
     "num_workers": 1,
@@ -31,8 +32,17 @@ config = {
 }
 
 # register the custom environment in ray
-env = 'GamaGymEnv-v0'
-register_env(env, lambda config: GamaGymEnv())
+env = 'GamaEnv-v0'
+register_env(env, lambda config: GamaEnv(headless_directory      = lv.headless_dir,
+                         headless_script_path    = lv.run_headless_script_path,
+                         gaml_experiment_path    = lv.gaml_file_path,
+                         gaml_experiment_name    = lv.experiment_name,
+                         gama_server_url         = "localhost",
+                         gama_server_port        = 6868,
+                         )
+            )
+
+
 # Create our RLlib Trainer.
 trainer = PPOTrainer(config=config)
 

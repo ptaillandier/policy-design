@@ -110,7 +110,10 @@ if __name__ == "__main__":
             headless_directory      = headless_dir,
             headless_script_path    = run_headless_script_path,
             gaml_experiment_path    = gaml_file_path,
-            gaml_experiment_name    = experiment_name)
+            gaml_experiment_name    = experiment_name,
+            gama_server_url         = "localhost",
+            gama_server_port        = 6868,
+)
     #Check that the result file for evaluation does not exist
     try:
       os.remove(results_filepath)
