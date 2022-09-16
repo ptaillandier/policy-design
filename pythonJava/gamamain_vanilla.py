@@ -21,7 +21,7 @@ session = tf.compat.v1.Session(config=config)
 
 parser = argparse.ArgumentParser(description='Runs the experiment for the gama policy design environment')
 parser.add_argument(
-    "--iters",
+    "--num-iters",
     type=int,
     default=3,
     help="Number of iterations.",
@@ -65,7 +65,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 ### Start configuration variables ###
-max_training_iters = args.iters # Number of training iterations (times that we run training)
+max_training_iters = args.num_iters # Number of training iterations (times that we run training)
 batch_size = args.num_batch_episodes
 discount_factor = args.discount_factor
 learning_rate = args.learning_rate
