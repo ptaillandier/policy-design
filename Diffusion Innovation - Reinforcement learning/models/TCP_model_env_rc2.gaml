@@ -28,9 +28,9 @@ global {
 			do send_reward;
 			//write "simulation sending end signal";
 			do send_end;
-			//write "simulation waiting for server's end signal";
+			//write "simulation waiting for python's end signal";
 			
-			//when the server is over he sends a message to the simulation, needed to prevent connection reset exceptions
+			//when the python model is over he sends a message to the simulation, needed to prevent connection reset exceptions
 //			do read_line from:server;
 			loop while: !has_more_message()  { 
 				do fetch_message_from_network;
@@ -126,7 +126,7 @@ species institution_tcp parent: institution skills:[network] {
 	
 	
 	message wait_next_message {
-		write "waiting for server to send data"; 
+		write "waiting for python to send data"; 
 		loop while: !has_more_message()  { 
 			do fetch_message_from_network;
 		}
@@ -135,7 +135,7 @@ species institution_tcp parent: institution skills:[network] {
 	
 	action select_actions {
 		write "select_actions";
-		//Getting the actions from the server
+		//Getting the actions from the python model
 		let msg <- wait_next_message();
 		//write "received " + msg;
 				

@@ -89,8 +89,8 @@ class GamaEnv(gym.Env):
     def run_gama_server(self):
         cmd = f"cd \"{self.headless_dir}\" && \"{self.run_headless_script_path}\" -socket {self.gama_server_port}"
         print("running gama headless with command: ", cmd)
-        # server = subprocess.Popen(cmd, shell=True)
-        # self.gama_server_pid = server.pid
+        server = subprocess.Popen(cmd, shell=True)
+        self.gama_server_pid = server.pid
         print("gama server pid:", self.gama_server_pid)
 
     def init_gama_server(self):
@@ -212,22 +212,26 @@ class GamaEnv(gym.Env):
         sim_port = self.init_server_simulation_control()
 
         # initialize the experiment
-        print("asking gama-server to start the experiment")
-        self.gama_server_exp_id = await self.gama_server_handler.init_experiment(   self.gaml_file_path,
-                                                                                    self.experiment_name,
-                                                                                    self.gama_server_sock_id,
-                                                                                    params=[
-                                                                                            {
-                                                                                                "type": "int",
-                                                                                                "name": "port",
-                                                                                                "value": sim_port
-                                                                                            }
-                                                                                    ])
+        try:
+            print("asking gama-server to start the experiment")
+            self.gama_server_exp_id = await self.gama_server_handler.init_experiment(   self.gaml_file_path,
+                                                                                        self.experiment_name,
+                                                                                        params=[
+                                                                                                {
+                                                                                                    "type": "int",
+                                                                                                    "name": "port",
+                                                                                                    "value": sim_port
+                                                                                                }
+                                                                                        ])
+        except Exception as e:
+            print("Unable to init the experiment: ", self.gaml_file_path, self.experiment_name, e)
+            sys.exit(-1)
+
         if self.gama_server_exp_id == "" or self.gama_server_exp_id is None:
             print("Unable to compile or initialize the experiment")
             sys.exit(-1)
 
-        if not await self.gama_server_handler.play(self.gama_server_sock_id, self.gama_server_exp_id):
+        if not await self.gama_server_handler.play(self.gama_server_exp_id):
             print("Unable to run the experiment")
             sys.exit(-1)
 
