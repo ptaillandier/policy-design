@@ -29,6 +29,9 @@ config = {
     "evaluation_config": {
         "render_env": False,
     },
+    "rollout_fragment_length": 20,
+    "train_batch_size": 40,
+    "sgd_minibatch_size": 20,
 }
 
 # register the custom environment in ray
