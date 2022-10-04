@@ -12,7 +12,9 @@ from typing import Optional
 from gym import spaces
 from ray.thirdparty_files import psutil
 
-from gamaenv.envs.GamaServerHandler import GamaServerHandler
+
+from gama_client.client import GamaClient
+
 
 
 class GamaEnv(gym.Env):
@@ -31,7 +33,7 @@ class GamaEnv(gym.Env):
     # Gama-server control variables
     gama_server_url: str                    = ""
     gama_server_port: int                   = -1
-    gama_server_handler: GamaServerHandler  = None
+    gama_server_handler: GamaClient         = None
     gama_server_sock_id: str                = ""# represents the current socket used to communicate with gama-server
     gama_server_exp_id: str                 = ""# represents the current experiment being manipulated by gama-server
     gama_server_connected: asyncio.Event    = None
@@ -97,7 +99,7 @@ class GamaEnv(gym.Env):
         start_new_thread(self.run_gama_server, ())
 
         # try to connect to gama-server
-        self.gama_server_handler = GamaServerHandler(self.gama_server_url, self.gama_server_port)
+        self.gama_server_handler = GamaClient(self.gama_server_url, self.gama_server_port)
         self.gama_server_sock_id = ""
         for i in range(30):
             try:
@@ -210,22 +212,26 @@ class GamaEnv(gym.Env):
         sim_port = self.init_server_simulation_control()
 
         # initialize the experiment
-        print("asking gama-server to start the experiment")
-        self.gama_server_exp_id = await self.gama_server_handler.init_experiment(   self.gaml_file_path,
-                                                                                    self.experiment_name,
-                                                                                    self.gama_server_sock_id,
-                                                                                    params=[
-                                                                                            {
-                                                                                                "type": "int",
-                                                                                                "name": "port",
-                                                                                                "value": sim_port
-                                                                                            }
-                                                                                    ])
+        try:
+            print("asking gama-server to start the experiment")
+            self.gama_server_exp_id = await self.gama_server_handler.init_experiment(   self.gaml_file_path,
+                                                                                        self.experiment_name,
+                                                                                        params=[
+                                                                                                {
+                                                                                                    "type": "int",
+                                                                                                    "name": "port",
+                                                                                                    "value": sim_port
+                                                                                                }
+                                                                                        ])
+        except Exception as e:
+            print("Unable to init the experiment: ", self.gaml_file_path, self.experiment_name, e)
+            sys.exit(-1)
+
         if self.gama_server_exp_id == "" or self.gama_server_exp_id is None:
             print("Unable to compile or initialize the experiment")
             sys.exit(-1)
 
-        if not await self.gama_server_handler.play(self.gama_server_sock_id, self.gama_server_exp_id):
+        if not await self.gama_server_handler.play(self.gama_server_exp_id):
             print("Unable to run the experiment")
             sys.exit(-1)
 

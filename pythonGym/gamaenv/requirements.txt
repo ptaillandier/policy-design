@@ -1,0 +1,5 @@
+gym~=0.23.1
+numpy~=1.22.3
+ray[rllib]~=2.0.0
+tensorflow==2.8.0
+gama_client~=1.0.3
