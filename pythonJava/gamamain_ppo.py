@@ -1,5 +1,5 @@
 import gym
-import gamaenv
+import gama_gym
 import socket
 import time
 import sys

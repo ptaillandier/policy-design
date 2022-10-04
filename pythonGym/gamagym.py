@@ -5,7 +5,7 @@ import user_local_variables as lv
 
 
 # Configure the algorithm.
-from gamaenv.envs import GamaEnv
+from gama_gym.envs import GamaEnv
 
 config = {
     # Environment (RLlib understands openAI gym registered strings).

@@ -2,7 +2,7 @@ import socket
 import time
 import sys
 import gym
-import gamaenv
+import gama_gym
 from keras import Sequential
 import os
 from policy_dirichlet import Policy
