@@ -30,8 +30,8 @@ config = {
         "render_env": False,
     },
     "rollout_fragment_length": 20,
-    "train_batch_size": 40,
-    "sgd_minibatch_size": 20,
+    "train_batch_size": 20,
+    "sgd_minibatch_size": 10,
 }
 
 # register the custom environment in ray
@@ -52,7 +52,7 @@ trainer = PPOTrainer(config=config)
 # Run it for n training iterations. A training iteration includes
 # parallel sample collection by the environment workers as well as
 # loss calculation on the collected batch and a model update.
-for _ in range(3):
+for _ in range(1):
     # Perform one iteration of training the policy with PPO
     result = trainer.train()
     print('result')
