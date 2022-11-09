@@ -1,6 +1,6 @@
 import unittest 
 import numpy as np
-import gamaenv
+import gama_gym
 import gym
 from gym.utils import env_checker as env_checker_gym
 from ray.rllib.utils.pre_checks import env as env_checker_ray
