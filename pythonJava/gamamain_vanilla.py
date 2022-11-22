@@ -105,14 +105,6 @@ results4_filepath           = 'results_nnoutputs.csv'
 
 
 if __name__ == "__main__":
-    #Create the environment
-    env = gym.make('GamaEnv-v0',
-            headless_directory      = headless_dir,
-            headless_script_path    = run_headless_script_path,
-            gaml_experiment_path    = gaml_file_path,
-            gaml_experiment_name    = experiment_name,
-            gama_server_url         = "localhost",
-            gama_server_port        = 6868)
     #Check that the result file for evaluation does not exist
     try:
       os.remove(results_filepath)
@@ -155,75 +147,87 @@ if __name__ == "__main__":
     policy_manager: Policy = Policy(model)
     print('max_training_iters', max_training_iters)
     i_episode = 0
-    #For each training iteration
-    for i_iter in range(max_training_iters):
-        print('i_iter', i_iter)
-        tic_b_iter = time.time()
-        batch_episodes = []
+    try:
+        #Create the environment
+        env = gym.make('GamaEnv-v0',
+             headless_directory      = headless_dir,
+             headless_script_path    = run_headless_script_path,
+             gaml_experiment_path    = gaml_file_path,
+             gaml_experiment_name    = experiment_name,
+             gama_server_url         = "localhost",
+             gama_server_port        = 6868)
+
+        #For each training iteration
+        for i_iter in range(max_training_iters):
+            print('i_iter', i_iter)
+            tic_b_iter = time.time()
+            batch_episodes = []
  
-        for i_batch in range(batch_size):
-            time_updating_policy = 0
-            time_simulation = 0
-            i_experience = 0
-            episode = utils.Episode()
-            episode.set_id(i_episode)
-            tic_b = time.time()
-            obs = env.reset()
-            time_simulation = time_simulation + time.time()-tic_b
-            obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times tha    t remain for changing the policy
-            print("model initially received:", obs)
-            done = False
-            while not done:
-                # we then compute a policy and send it back to gama
+            for i_batch in range(batch_size):
+                time_updating_policy = 0
+                time_simulation = 0
+                i_experience = 0
+                episode = utils.Episode()
+                episode.set_id(i_episode)
                 tic_b = time.time()
-                action, processed_observations, action_env, nn_outputs = policy_manager.choose_action(obs, n_actions)
-                time_updating_policy = time_updating_policy + time.time() - tic_b
-                #store in the result file the outputs of the nn 
-                with open(results4_filepath, 'a') as f:
-                    f.write(str(episode.id)+','+str(i_experience)+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output)     for output in nn_outputs])+'\n')
-                str_action = ",".join([str(action) for action in action_env]) + "\n" 
-                #store in the result file the actions taken
-                with open(results3_filepath, 'a') as f:
-                    f.write(str(episode.id)+','+str(i_experience)+','+ str_action)
+                obs = env.reset()
+                time_simulation = time_simulation + time.time()-tic_b
+                obs[2] = float(n_times_4_action-i_experience) #We change the last observation to be the number of times tha    t remain for changing the policy
+                print("model initially received:", obs)
+                done = False
+                while not done:
+                    # we then compute a policy and send it back to gama
+                    tic_b = time.time()
+                    action, processed_observations, action_env, nn_outputs = policy_manager.choose_action(obs, n_actions)
+                    time_updating_policy = time_updating_policy + time.time() - tic_b
+                    #store in the result file the outputs of the nn 
+                    with open(results4_filepath, 'a') as f:
+                        f.write(str(episode.id)+','+str(i_experience)+','+str(obs[0])+','+str(obs[1])+','+','.join([str(output)     for output in nn_outputs])+'\n')
+                    str_action = ",".join([str(action) for action in action_env]) + "\n" 
+                    #store in the result file the actions taken
+                    with open(results3_filepath, 'a') as f:
+                        f.write(str(episode.id)+','+str(i_experience)+','+ str_action)
  
-                print("model sending policy:(thetaeconomy,thetamanagement,fmanagement,thetaenvironment,fenvironment)",str_action)
-                tic_b = time.time()
-                next_obs, reward, done, info = env.step(action_env)
-                time_simulation = time_simulation + time.time() - tic_b
-                print("model received reward:", reward)
-                episode.add_experience(obs, action, float(reward))
-                obs = next_obs
-                i_experience = i_experience + 1
+                    print("model sending policy:(thetaeconomy,thetamanagement,fmanagement,thetaenvironment,fenvironment)",str_action)
+                    tic_b = time.time()
+                    next_obs, reward, done, info = env.step(action_env)
+                    time_simulation = time_simulation + time.time() - tic_b
+                    print("model received reward:", reward)
+                    episode.add_experience(obs, action, float(reward))
+                    obs = next_obs
+                    i_experience = i_experience + 1
             
-            episode.set_last_observation(obs)
-            print('\t','updating policy time', time_updating_policy)
-            print('\t','simulation time', time_simulation)
-            batch_episodes.append(episode)
+                episode.set_last_observation(obs)
+                print('\t','updating policy time', time_updating_policy)
+                print('\t','simulation time', time_simulation)
+                batch_episodes.append(episode)
         
-        i_batch_episode = 0
-        for episode in batch_episodes:
-            sum_episode_rewards = sum(episode.rewards) #the sum of discounted? rewards of an episode is the basic component for all performance stadistics
-            #store in the resuls file the sum of rewards for this episode
-            with open(results_filepath, 'a') as f:
-                f.write(str(sum_episode_rewards)+'\n')
-            # Save the number of adopters end of each episode for statistics
-            with open(results2_filepath, 'a') as f:
-                f.write(str(episode.last_observation[1])+'\n')
-            print('episode.observations[-2][0]', episode.observations[-2][0])
-            print('episode.observations[-1][0]', episode.observations[-1][0])
-            print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.last_observation[1]), 'remaining_budget', episode.last_observation[0], '\n')
-            i_batch_episode = i_batch_episode + 1
+            i_batch_episode = 0
+            for episode in batch_episodes:
+                sum_episode_rewards = sum(episode.rewards) #the sum of discounted? rewards of an episode is the basic component for all performance stadistics
+                #store in the resuls file the sum of rewards for this episode
+                with open(results_filepath, 'a') as f:
+                    f.write(str(sum_episode_rewards)+'\n')
+                # Save the number of adopters end of each episode for statistics
+                with open(results2_filepath, 'a') as f:
+                    f.write(str(episode.last_observation[1])+'\n')
+                print('episode.observations[-2][0]', episode.observations[-2][0])
+                print('episode.observations[-1][0]', episode.observations[-1][0])
+                print('Batch episode:', i_batch_episode,'\t', ' reward:', sum_episode_rewards, ' fraction of adopters ', str(episode.last_observation[1]), 'remaining_budget', episode.last_observation[0], '\n')
+                i_batch_episode = i_batch_episode + 1
 
-        tic_b = time.time()
-        print('discount_factor', discount_factor)
-        # Create a training based on model with the desired parameters.
-        tr = Training(model, discount_factor=discount_factor, optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, epsilon=epsilon))
-        tr.train(batch_episodes)
+            tic_b = time.time()
+            print('discount_factor', discount_factor)
+            # Create a training based on model with the desired parameters.
+            tr = Training(model, discount_factor=discount_factor, optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate, epsilon=epsilon))
+            tr.train(batch_episodes)
 
         
-        training_time = time.time() - tic_b
-        print('\t','training time', training_time)
-        print('it:',i_iter,'\t time:',time.time()-tic_b_iter)
-        i_episode = i_episode + 1
+            training_time = time.time() - tic_b
+            print('\t','training time', training_time)
+            print('it:',i_iter,'\t time:',time.time()-tic_b_iter)
+            i_episode = i_episode + 1 
+    finally:
+            env.close()
     #Store model to reuse to pursue learning       
-    model.save(MODELPATH, include_optimizer=False)
+    #model.save(MODELPATH, include_optimizer=False)
